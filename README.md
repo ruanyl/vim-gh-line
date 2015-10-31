@@ -3,6 +3,8 @@ vim-gh-line
 
 A vim plugin that open the link to current line at Github
 
+![gh-line](https://cloud.githubusercontent.com/assets/486382/10865375/142cd426-8012-11e5-92f8-44357b7acf9c.gif)
+
 How to install
 -----------------------
 ###Vundle
