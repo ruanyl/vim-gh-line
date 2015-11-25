@@ -33,3 +33,8 @@ Use your own mapping:
 ```
 let g:gh_line_map = '<leader>gh'
 ```
+
+Use a custom program to open link:
+```
+let g:gh_open_command = 'open '
+```
