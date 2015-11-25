@@ -16,6 +16,10 @@ if !exists('g:gh_line_map_default')
     let g:gh_line_map_default = 1
 endif
 
+if !exists('g:gh_open_command')
+    let g:gh_open_command = 'open '
+endif
+
 if !exists('g:gh_line_map') && g:gh_line_map_default == 1
     let g:gh_line_map = '<leader>gh'
 endif
@@ -56,7 +60,7 @@ func! s:gh_line() range
 
     " Form URL With Line Range
     let url = origin . blob . branch . relative . '#' . lineRange
-    call system("open " . url)
+    call system(g:gh_open_command . url)
 
 endfun
 
