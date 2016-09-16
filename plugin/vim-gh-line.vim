@@ -46,7 +46,12 @@ func! s:gh_line() range
 
     " Git Commands
     let origin = system(cdDir . "git config --get remote.origin.url" . " | " . sed_cmd)
-    let branch = system(cdDir . "git rev-parse --abbrev-ref HEAD")
+    if exists('g:gh_use_canonical')
+        let branch = system(cdDir . "git rev-parse HEAD")
+    else
+        let branch = system(cdDir . "git rev-parse --abbrev-ref HEAD")
+    endif
+
     let gitRoot = system(cdDir . "git rev-parse --show-toplevel")
 
     " Strip Newlines
