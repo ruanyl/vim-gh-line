@@ -38,3 +38,8 @@ Use a custom program to open link:
 ```
 let g:gh_open_command = 'open '
 ```
+
+Use [canonical version hash](https://help.github.com/articles/getting-permanent-links-to-files/) for url in place of branch name:
+```
+let g:gh_use_canonical = 1
+```

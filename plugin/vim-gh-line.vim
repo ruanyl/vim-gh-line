@@ -24,6 +24,10 @@ if !exists('g:gh_line_map') && g:gh_line_map_default == 1
     let g:gh_line_map = '<leader>gh'
 endif
 
+if !exists('g:gh_use_canonical')
+  let g:gh_use_canonical = 1
+endif
+
 func! s:gh_line() range
     " Get Line Number/s
     let lineNum = line('.')
@@ -46,7 +50,12 @@ func! s:gh_line() range
 
     " Git Commands
     let origin = system(cdDir . "git config --get remote.origin.url" . " | " . sed_cmd)
-    let commit = system(cdDir . "git rev-parse HEAD")
+    if exists('g:gh_use_canonical')
+        let commit = system(cdDir . "git rev-parse HEAD")
+    else
+        let commit = system(cdDir . "git rev-parse --abbrev-ref HEAD")
+    endif
+
     let gitRoot = system(cdDir . "git rev-parse --show-toplevel")
 
     " Strip Newlines
