@@ -46,12 +46,12 @@ func! s:gh_line() range
 
     " Git Commands
     let origin = system(cdDir . "git config --get remote.origin.url" . " | " . sed_cmd)
-    let branch = system(cdDir . "git rev-parse --abbrev-ref HEAD")
+    let commit = system(cdDir . "git rev-parse HEAD")
     let gitRoot = system(cdDir . "git rev-parse --show-toplevel")
 
     " Strip Newlines
     let origin = <SID>StripNL(origin)
-    let branch = <SID>StripNL(branch)
+    let commit = <SID>StripNL(commit)
     let gitRoot = <SID>StripNL(gitRoot)
     let fullPath = <SID>StripNL(fullPath)
 
@@ -59,7 +59,7 @@ func! s:gh_line() range
     let relative = split(fullPath, gitRoot)[-1]
 
     " Form URL With Line Range
-    let url = origin . blob . branch . relative . '#' . lineRange
+    let url = origin . blob . commit . relative . '#' . lineRange
     call system(g:gh_open_command . url)
 
 endfun
