@@ -7,7 +7,7 @@ A vim plugin that open the link to current line at Github
 
 How to install
 -----------------------
-###Vundle
+### Vundle
 Put this in your .vimrc
 
 ```vim
