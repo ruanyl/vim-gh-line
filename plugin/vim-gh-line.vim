@@ -16,20 +16,12 @@ if !exists('g:gh_line_map_default')
     let g:gh_line_map_default = 1
 endif
 
-if !exists('g:bb_line_map_default')
-    let g:bb_line_map_default = 1
-endif
-
 if !exists('g:gh_open_command')
     let g:gh_open_command = 'open '
 endif
 
 if !exists('g:gh_line_map') && g:gh_line_map_default == 1
     let g:gh_line_map = '<leader>gh'
-endif
-
-if !exists('g:bb_line_map') && g:bb_line_map_default == 1
-    let g:bb_line_map = '<leader>bb'
 endif
 
 if !exists('g:gh_use_canonical')
@@ -39,71 +31,17 @@ endif
 func! s:gh_line() range
     " Get Line Number/s
     let lineNum = line('.')
-
-    " Set Line Number/s
-    if a:firstline == a:lastline
-        let lineRange = 'L' . lineNum
-    else
-        let lineRange = 'L' . a:firstline . "-L" . a:lastline
-    endif
-
-    " String Setup
-    let blob = "/blob/"
-    let sed_cmd = "sed 's\/git@\/https:\\/\\/\/g; s\/.git$\/\/g; s\/\.com:\/.com\\/\/g'"
-
-    " Get Directory & File Names
-    let fullPath = resolve(expand("%:p"))
-    let fileDir = resolve(expand("%:p:h"))
-    let cdDir = "cd " . fileDir . "; "
-
-    " Git Commands
-    let origin = system(cdDir . "git config --get remote.origin.url" . " | " . sed_cmd)
-    if exists('g:gh_use_canonical')
-        let commit = system(cdDir . "git rev-parse HEAD")
-    else
-        let commit = system(cdDir . "git rev-parse --abbrev-ref HEAD")
-    endif
-
-    let gitRoot = system(cdDir . "git rev-parse --show-toplevel")
-
-    " Strip Newlines
-    let origin = <SID>StripNL(origin)
-    let commit = <SID>StripNL(commit)
-    let gitRoot = <SID>StripNL(gitRoot)
-    let fullPath = <SID>StripNL(fullPath)
-
-    " Git Relative Path
-    let relative = split(fullPath, gitRoot)[-1]
-
-    " Form URL With Line Range
-    let url = origin . blob . commit . relative . '#' . lineRange
-    call system(g:gh_open_command . url)
-
-endfun
-
-func! s:bb_line() range
-    " Get Line Number/s
-    let lineNum = line('.')
-
-    " Set Line Number/s
-    if a:firstline == a:lastline
-        let lineRange = '-' . lineNum
-    else
-        let lineRange = 'L' . a:firstline . "-L" . a:lastline
-    endif
-
-    " String Setup
-    let src = "/src/"
-    let sed_cmd = "sed 's\/git@\/https:\\/\\/\/g; s\/.git$\/\/g; s\/\.org:\/.org\\/\/g'"
-
-    " Get Directory & File Names
-    let fullPath = resolve(expand("%:p"))
-    let fileDir = resolve(expand("%:p:h"))
-    let cdDir = "cd " . fileDir . "; "
     let fileName = resolve(expand('%:t'))
 
-    " Git Commands
+    let fileDir = resolve(expand("%:p:h"))
+    let cdDir = "cd " . fileDir . "; "
+    let sed_cmd = "sed 's\/git@\/https:\\/\\/\/g; s\/.git$\/\/g; s\/\.com:\/.com\\/\/g; s\/\.org:\/.org\\/\/g'"
     let origin = system(cdDir . "git config --get remote.origin.url" . " | " . sed_cmd)
+
+    " Get Directory & File Names
+    let fullPath = resolve(expand("%:p"))
+
+    " Git Commands
     if exists('g:gh_use_canonical')
         let commit = system(cdDir . "git rev-parse HEAD")
     else
@@ -121,9 +59,26 @@ func! s:bb_line() range
     " Git Relative Path
     let relative = split(fullPath, gitRoot)[-1]
 
+    " Set Line Number/s
     " Form URL With Line Range
-    let url = origin . src . commit . relative . '#' . fileName . lineRange
-    echo url
+    if match(origin, 'github.com') >= 0
+      let blob = "/blob/"
+      if a:firstline == a:lastline
+          let lineRange = 'L' . lineNum
+      else
+          let lineRange = 'L' . a:firstline . "-L" . a:lastline
+      endif
+      let url = origin . blob . commit . relative . '#' . lineRange
+    elseif match(origin, 'bitbucket.org') >= 0
+      let blob = "/src/"
+      if a:firstline == a:lastline
+          let lineRange = '-' . lineNum
+      else
+          let lineRange = 'L' . a:firstline . "-L" . a:lastline
+      endif
+      let url = origin . blob . commit . relative . '#' . fileName . lineRange
+    endif
+
     call system(g:gh_open_command . url)
 
 endfun
@@ -133,12 +88,7 @@ func! s:StripNL(l)
 endfun
 
 noremap <silent> <Plug>(gh-line) :call <SID>gh_line()<CR>
-noremap <silent> <Plug>(bb-line) :call <SID>bb_line()<CR>
 
 if !hasmapto('<Plug>(gh-line)') && exists('g:gh_line_map')
     exe "map" g:gh_line_map "<Plug>(gh-line)"
-end
-
-if !hasmapto('<Plug>(bb-line)') && exists('g:bb_line_map')
-    exe "map" g:bb_line_map "<Plug>(bb-line)"
 end
