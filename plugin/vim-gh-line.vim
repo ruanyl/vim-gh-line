@@ -61,7 +61,7 @@ func! s:gh_line() range
 
     " Set Line Number/s
     " Form URL With Line Range
-    if match(origin, 'github.com') >= 0
+    if match(origin, 'github') >= 0
       let blob = "/blob/"
       if a:firstline == a:lastline
           let lineRange = 'L' . lineNum
