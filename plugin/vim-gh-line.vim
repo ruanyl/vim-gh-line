@@ -77,6 +77,10 @@ func! s:gh_line() range
           let lineRange = 'L' . a:firstline . "-L" . a:lastline
       endif
       let url = origin . blob . commit . relative . '#' . fileName . lineRange
+    elseif exists("g:gh_gitlab_domain") && match(origin, g:gh_gitlab_domain)
+      let blob = "/blob/"
+      let lineNumber = 'L' . a:firstline  " only line number works, no range
+      let url = origin . blob . commit . relative . '#' . lineNumber
     endif
 
     call system(g:gh_open_command . url)

@@ -1,7 +1,7 @@
 vim-gh-line
 =============
 
-A vim plugin that open the link to current line at Github
+A vim plugin that open the link to current line at Github (Also support Bitbucket and self deployed gitlab)
 
 ![gh-line](https://cloud.githubusercontent.com/assets/486382/10865375/142cd426-8012-11e5-92f8-44357b7acf9c.gif)
 
@@ -42,4 +42,9 @@ let g:gh_open_command = 'open '
 Use [canonical version hash](https://help.github.com/articles/getting-permanent-links-to-files/) for url in place of branch name:
 ```
 let g:gh_use_canonical = 1
+```
+
+Use self deployed gitlab:
+```
+let g:gh_gitlab_domain = "<your gitlab domain>"
 ```
