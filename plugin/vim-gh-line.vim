@@ -16,6 +16,10 @@ if !exists('g:gh_line_map_default')
     let g:gh_line_map_default = 1
 endif
 
+if !exists('g:gh_line_blame_map_default')
+    let g:gh_line_blame_map_default = 1
+endif
+
 if !exists('g:gh_open_command')
     let g:gh_open_command = 'open '
 endif
@@ -24,11 +28,15 @@ if !exists('g:gh_line_map') && g:gh_line_map_default == 1
     let g:gh_line_map = '<leader>gh'
 endif
 
-if !exists('g:gh_use_canonical')
-  let g:gh_use_canonical = 1
+if !exists('g:gh_line_blame_map') && g:gh_line_blame_map_default == 1
+    let g:gh_line_blame_map = '<leader>gb'
 endif
 
-func! s:gh_line() range
+if !exists('g:gh_use_canonical')
+    let g:gh_use_canonical = 1
+endif
+
+func! s:gh_line(action) range
     " Get Line Number/s
     let lineNum = line('.')
     let fileName = resolve(expand('%:t'))
@@ -48,6 +56,7 @@ func! s:gh_line() range
     let commit = <SID>StripNL(commit)
     let gitRoot = <SID>StripNL(gitRoot)
     let fullPath = <SID>StripNL(fullPath)
+    let action = s:Action(origin, a:action)
 
     " Git Relative Path
     let relative = split(fullPath, gitRoot)[-1]
@@ -55,25 +64,40 @@ func! s:gh_line() range
     " Set Line Number/s; Form URL With Line Range
     if s:Github(origin)
       let lineRange = s:GithubLineLange(a:firstline, a:lastline, lineNum)
-      let url = origin . '/blob/' . commit . relative . '#' . lineRange
+      let url = origin . action . commit . relative . '#' . lineRange
     elseif s:Bitbucket(origin)
       let lineRange = s:BitbucketLineRange(a:firstline, a:lastline, lineNum)
-      let url = s:BitBucketUrl(origin) . '/src/' . commit . relative . '#' . lineRange
+      let url = s:BitBucketUrl(origin) . action . commit . relative . '#' . lineRange
     elseif s:Gitlab(origin)
       let lineRange = s:GitLabLineRange(a:firstline, a:lastline, lineNum)
-      let url = origin . '/blob/' . commit . relative . '#' . lineRange
+      let url = origin . action . commit . relative . '#' . lineRange
     endif
 
     call system(g:gh_open_command . url)
 endfun
 
+func! s:Action(origin, action)
+  if a:action == 'blame'
+    if s:Bitbucket(a:origin)
+      return '/annotate/'
+    else
+      return '/blame/'
+    endif
+  elseif a:action == 'blob'
+    if s:Bitbucket(a:origin)
+      return '/src/'
+    else
+      return '/blob/'
+    endif
+  endif
+endfunc
+
 func! s:Commit(cdDir)
   if exists('g:gh_use_canonical')
-    let gitCommand = 'git rev-parse HEAD'
+    return system(a:cdDir . 'git rev-parse HEAD')
   else
-    let gitCommand = 'git rev-parse --abbrev-ref HEAD'
+    return system(a:cdDir . 'git rev-parse --abbrev-ref HEAD')
   endif
-  return system(a:cdDir . gitCommand)
 endfunc
 
 func! s:Github(origin)
@@ -90,29 +114,26 @@ endfunc
 
 func! s:GithubLineLange(firstLine, lastLine, lineNum)
   if a:firstLine == a:lastLine
-    let lineRange = 'L' . a:lineNum
+    return 'L' . a:lineNum
   else
-    let lineRange = 'L' . a:firstLine . '-L' . a:lastLine
+    return 'L' . a:firstLine . '-L' . a:lastLine
   endif
-  return lineRange
 endfunc
 
 func! s:BitbucketLineRange(firstLine, lastLine, lineNum)
   if a:firstLine == a:lastLine
-    let lineRange = '-' . a:lineNum
+    return '-' . a:lineNum
   else
-    let lineRange = '-' . a:firstLine . ':' . a:lastLine
+    return '-' . a:firstLine . ':' . a:lastLine
   endif
-  return lineRange
 endfunc
 
 func! s:GitLabLineRange(firstLine, lastLine, lineNum)
   if a:firstLine == a:lastLine
-    let lineRange = 'L' . a:lineNum
+    return 'L' . a:lineNum
   else
-    let lineRange = 'L' . a:firstLine . '-' . a:lastLine
+    return 'L' . a:firstLine . '-' . a:lastLine
   endif
-  return lineRange
 endfunc
 
 func! s:StripNL(l)
@@ -123,8 +144,13 @@ func! s:BitBucketUrl(origin)
   return substitute(a:origin, '\(:\/\/\)\@<=.*@', '', '')
 endfunc
 
-noremap <silent> <Plug>(gh-line) :call <SID>gh_line()<CR>
+noremap <silent> <Plug>(gh-line) :call <SID>gh_line('blob')<CR>
+noremap <silent> <Plug>(gh-line-blame) :call <SID>gh_line('blame')<CR>
 
 if !hasmapto('<Plug>(gh-line)') && exists('g:gh_line_map')
     exe "map" g:gh_line_map "<Plug>(gh-line)"
+end
+
+if !hasmapto('<Plug>(gh-line-blame)') && exists('g:gh_line_blame_map')
+    exe "map" g:gh_line_blame_map "<Plug>(gh-line-blame)"
 end
