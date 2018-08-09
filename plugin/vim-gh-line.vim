@@ -32,7 +32,6 @@ func! s:gh_line() range
     " Get Line Number/s
     let lineNum = line('.')
     let fileName = resolve(expand('%:t'))
-
     let fileDir = resolve(expand("%:p:h"))
     let cdDir = "cd " . fileDir . "; "
     let sed_cmd = "sed 's\/git@\/https:\\/\\/\/g; s\/.git$\/\/g; s\/\.com:\/.com\\/\/g; s\/\.org:\/.org\\/\/g'"
@@ -40,14 +39,8 @@ func! s:gh_line() range
 
     " Get Directory & File Names
     let fullPath = resolve(expand("%:p"))
-
     " Git Commands
-    if exists('g:gh_use_canonical')
-        let commit = system(cdDir . "git rev-parse HEAD")
-    else
-        let commit = system(cdDir . "git rev-parse --abbrev-ref HEAD")
-    endif
-
+    let commit = s:Commit(cdDir)
     let gitRoot = system(cdDir . "git rev-parse --show-toplevel")
 
     " Strip Newlines
@@ -59,37 +52,76 @@ func! s:gh_line() range
     " Git Relative Path
     let relative = split(fullPath, gitRoot)[-1]
 
-    " Set Line Number/s
-    " Form URL With Line Range
-    if match(origin, 'github') >= 0
-      let blob = "/blob/"
-      if a:firstline == a:lastline
-          let lineRange = 'L' . lineNum
-      else
-          let lineRange = 'L' . a:firstline . "-L" . a:lastline
-      endif
-      let url = origin . blob . commit . relative . '#' . lineRange
-    elseif match(origin, 'bitbucket.org') >= 0
-      let blob = "/src/"
-      if a:firstline == a:lastline
-          let lineRange = '-' . lineNum
-      else
-          let lineRange = 'L' . a:firstline . "-L" . a:lastline
-      endif
-      let url = origin . blob . commit . relative . '#' . fileName . lineRange
-    elseif exists("g:gh_gitlab_domain") && match(origin, g:gh_gitlab_domain)
-      let blob = "/blob/"
-      let lineNumber = 'L' . a:firstline  " only line number works, no range
-      let url = origin . blob . commit . relative . '#' . lineNumber
+    " Set Line Number/s; Form URL With Line Range
+    if s:Github(origin)
+      let lineRange = s:GithubLineLange(a:firstline, a:lastline, lineNum)
+      let url = origin . '/blob/' . commit . relative . '#' . lineRange
+    elseif s:Bitbucket(origin)
+      let lineRange = s:BitbucketLineRange(a:firstline, a:lastline, lineNum)
+      let url = s:BitBucketUrl(origin) . '/src/' . commit . relative . '#' . lineRange
+    elseif s:Gitlab(origin)
+      let lineRange = s:GitLabLineRange(a:firstline, a:lastline, lineNum)
+      let url = origin . '/blob/' . commit . relative . '#' . lineRange
     endif
 
     call system(g:gh_open_command . url)
-
 endfun
+
+func! s:Commit(cdDir)
+  if exists('g:gh_use_canonical')
+    let gitCommand = 'git rev-parse HEAD'
+  else
+    let gitCommand = 'git rev-parse --abbrev-ref HEAD'
+  endif
+  return system(a:cdDir . gitCommand)
+endfunc
+
+func! s:Github(origin)
+  return match(a:origin, 'github') >= 0
+endfunc
+
+func! s:Bitbucket(origin)
+  return match(a:origin, 'bitbucket.org') >= 0
+endfunc
+
+func! s:Gitlab(origin)
+  return exists('g:gh_gitlab_domain') && match(a:origin, g:gh_gitlab_domain) || match(a:origin, 'gitlab') >= 0
+endfunc
+
+func! s:GithubLineLange(firstLine, lastLine, lineNum)
+  if a:firstLine == a:lastLine
+    let lineRange = 'L' . a:lineNum
+  else
+    let lineRange = 'L' . a:firstLine . '-L' . a:lastLine
+  endif
+  return lineRange
+endfunc
+
+func! s:BitbucketLineRange(firstLine, lastLine, lineNum)
+  if a:firstLine == a:lastLine
+    let lineRange = '-' . a:lineNum
+  else
+    let lineRange = '-' . a:firstLine . ':' . a:lastLine
+  endif
+  return lineRange
+endfunc
+
+func! s:GitLabLineRange(firstLine, lastLine, lineNum)
+  if a:firstLine == a:lastLine
+    let lineRange = 'L' . a:lineNum
+  else
+    let lineRange = 'L' . a:firstLine . '-' . a:lastLine
+  endif
+  return lineRange
+endfunc
 
 func! s:StripNL(l)
   return substitute(a:l, '\n$', '', '')
 endfun
+
+func! s:BitBucketUrl(origin)
+  return substitute(a:origin, '\(:\/\/\)\@<=.*@', '', '')
+endfunc
 
 noremap <silent> <Plug>(gh-line) :call <SID>gh_line()<CR>
 
