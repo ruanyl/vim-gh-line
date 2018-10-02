@@ -159,7 +159,7 @@ func! s:BitBucketUrl(origin)
 endfunc
 
 func! s:GitLabUrl(origin)
-  let l:origin = substitute(a:origin, '.cn:', '.cn/', '')
+  let l:origin = a:origin
   if g:gh_gitlab_only_http
     let l:origin = substitute(l:origin, 'https://', 'http://', '')
   endif
