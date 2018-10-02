@@ -111,7 +111,7 @@ func! s:Commit(cdDir)
 endfunc
 
 func! s:Github(origin)
-  return match(a:origin, 'github') >= 0
+  return exists('g:gh_github_domain') && match(a:origin, g:gh_github_domain) || match(a:origin, 'github') >= 0
 endfunc
 
 func! s:Bitbucket(origin)
