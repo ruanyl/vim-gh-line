@@ -36,6 +36,10 @@ if !exists('g:gh_use_canonical')
     let g:gh_use_canonical = 1
 endif
 
+if !exists('g:gh_gitlab_only_http')
+    let g:gh_gitlab_only_http = 0
+endif
+
 func! s:gh_line(action) range
     " Get Line Number/s
     let lineNum = line('.')
@@ -80,7 +84,7 @@ func! s:gh_line(action) range
       let url = s:BitBucketUrl(origin) . action . commit . relative . '#' . lineRange
     elseif s:Gitlab(origin)
       let lineRange = s:GitLabLineRange(a:firstline, a:lastline, lineNum)
-      let url = origin . action . commit . relative . '#' . lineRange
+      let url = s:GitLabUrl(origin) . action . commit . relative . '#' . lineRange
     endif
 
     call system(g:gh_open_command . url)
@@ -152,6 +156,14 @@ endfun
 
 func! s:BitBucketUrl(origin)
   return substitute(a:origin, '\(:\/\/\)\@<=.*@', '', '')
+endfunc
+
+func! s:GitLabUrl(origin)
+  let l:origin = substitute(a:origin, '.cn:', '.cn/', '')
+  if g:gh_gitlab_only_http
+    let l:origin = substitute(l:origin, 'https://', 'http://', '')
+  endif
+  return l:origin
 endfunc
 
 noremap <silent> <Plug>(gh-line) :call <SID>gh_line('blob')<CR>
