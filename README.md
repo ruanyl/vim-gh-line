@@ -64,3 +64,8 @@ multiple domains separated with `|`):
 ```
 let g:gh_gitlab_domain = "<your gitlab domain>"
 ```
+
+Use self deployed gitlab only with http:
+```
+let g:gh_gitlab_only_http = 1
+```
