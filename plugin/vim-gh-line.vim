@@ -41,8 +41,18 @@ func! s:gh_line(action) range
     let lineNum = line('.')
     let fileName = resolve(expand('%:t'))
     let fileDir = resolve(expand("%:p:h"))
-    let cdDir = "cd " . fileDir . "; "
-    let sed_cmd = "sed 's\/git@\/https:\\/\\/\/g; s\/.git$\/\/g; s\/\.com:\/.com\\/\/g; s\/\.org:\/.org\\/\/g'"
+    let cdDir = "cd '" . fileDir . "'; "
+
+    " We need to turn a git remote like this:
+    " `git@github.com:user/repo.git`
+    " To a url like this:
+    " `https://github.com/user/repo`
+    "
+    " So we do the following replacements:
+    " 1. Replace the first `:` with `/`.
+    " 2. Strip the `git@` part and replace it with `https://`.
+    " 3. Strip the `.git` part in the end.
+    let sed_cmd = "sed 's\/:\/\\/\/; s\/^[^@]*@\/https:\\/\\/\/; s\/.git$\/\/; '"
     let origin = system(cdDir . "git config --get remote.origin.url" . " | " . sed_cmd)
 
     " Get Directory & File Names
