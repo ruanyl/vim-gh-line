@@ -53,10 +53,12 @@ func! s:gh_line(action) range
     " `https://github.com/user/repo`
     "
     " So we do the following replacements:
-    " 1. Replace the first `:` with `/`.
+    " 1. Replace the first `:` that does not follow `https` with `/`.
+    "   Useful for remotes using ssh protocol, e.g. git@github.com:ruanyl/vim-gh-line.git
+    "   A negative lookbehind regular expresion is used.
     " 2. Strip the `git@` part and replace it with `https://`.
     " 3. Strip the `.git` part in the end.
-    let sed_cmd = "sed 's\/:\/\\/\/; s\/^[^@]*@\/https:\\/\\/\/; s\/.git$\/\/; '"
+    let sed_cmd = "sed 's\/(https)\\@<!:\/\\/\/; s\/^[^@]*@\/https:\\/\\/\/; s\/.git$\/\/; '"
     let origin = system(cdDir . "git config --get remote.origin.url" . " | " . sed_cmd)
 
     " Get Directory & File Names
