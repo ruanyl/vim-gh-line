@@ -69,3 +69,12 @@ Use self deployed gitlab only with http:
 ```
 let g:gh_gitlab_only_http = 1
 ```
+
+Debugging
+----------
+
+For getting verbose prints from vim-gh-line plugin set.
+
+```
+let g:gh_trace = 1
+```

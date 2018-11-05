@@ -16,6 +16,10 @@ if !exists('g:gh_line_map_default')
     let g:gh_line_map_default = 1
 endif
 
+if !exists('g:gh_trace')
+    let g:gh_trace = 0
+endif
+
 if !exists('g:gh_line_blame_map_default')
     let g:gh_line_blame_map_default = 1
 endif
@@ -47,16 +51,23 @@ func! s:gh_line(action) range
     let fileDir = resolve(expand("%:p:h"))
     let cdDir = "cd '" . fileDir . "'; "
 
-    " We need to turn a git remote like this:
+    " If the remote is using ssh protocol, we need to turn a git remote like this:
     " `git@github.com:user/repo.git`
     " To a url like this:
     " `https://github.com/user/repo`
     "
+    " If the remote is using https protocol we only need to get rid of the
+    " trailing `.git`. Turn a git remote like this:
+    " `https://github.com/user/repo.git`
+    " To a url like this:
+    " `https://github.com/user/repo`
+    "
     " So we do the following replacements:
-    " 1. Replace the first `:` with `/`.
-    " 2. Strip the `git@` part and replace it with `https://`.
-    " 3. Strip the `.git` part in the end.
-    let sed_cmd = "sed 's\/:\/\\/\/; s\/^[^@]*@\/https:\\/\\/\/; s\/.git$\/\/; '"
+    " 1. `<userName>@<url>:<user>/<repo>` becomes
+    "    https://<url>/<user>/<repo>. Only applicable for remotes using ssh
+    "    protocol.
+    " 2. Strip the `.git` part in the end.
+    let sed_cmd = "sed 's\/^[^@:]*@\\([^:]*\\):\/https:\\\/\\\/\\1\\\/\/; s\/.git$\/\/; '"
     let origin = system(cdDir . "git config --get remote.origin.url" . " | " . sed_cmd)
 
     " Get Directory & File Names
@@ -87,7 +98,11 @@ func! s:gh_line(action) range
       let url = s:GitLabUrl(origin) . action . commit . relative . '#' . lineRange
     endif
 
-    call system(g:gh_open_command . url)
+    let l:finalCmd = g:gh_open_command . url
+    if g:gh_trace
+        echom "vim-gh-line executing: " . l:finalCmd
+    endif
+    call system(l:finalCmd)
 endfun
 
 func! s:Action(origin, action)
