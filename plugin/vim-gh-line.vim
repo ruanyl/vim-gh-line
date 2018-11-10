@@ -51,24 +51,7 @@ func! s:gh_line(action) range
     let fileDir = resolve(expand("%:p:h"))
     let cdDir = "cd '" . fileDir . "'; "
 
-    " If the remote is using ssh protocol, we need to turn a git remote like this:
-    " `git@github.com:user/repo.git`
-    " To a url like this:
-    " `https://github.com/user/repo`
-    "
-    " If the remote is using https protocol we only need to get rid of the
-    " trailing `.git`. Turn a git remote like this:
-    " `https://github.com/user/repo.git`
-    " To a url like this:
-    " `https://github.com/user/repo`
-    "
-    " So we do the following replacements:
-    " 1. `<userName>@<url>:<user>/<repo>` becomes
-    "    https://<url>/<user>/<repo>. Only applicable for remotes using ssh
-    "    protocol.
-    " 2. Strip the `.git` part in the end.
-    let sed_cmd = "sed 's\/^[^@:]*@\\([^:]*\\):\/https:\\\/\\\/\\1\\\/\/; s\/.git$\/\/; '"
-    let origin = system(cdDir . "git config --get remote.origin.url" . " | " . sed_cmd)
+    let origin = system(cdDir . "git config --get remote.origin.url")
 
     " Get Directory & File Names
     let fullPath = resolve(expand("%:p"))
@@ -89,13 +72,16 @@ func! s:gh_line(action) range
     " Set Line Number/s; Form URL With Line Range
     if s:Github(origin)
       let lineRange = s:GithubLineLange(a:firstline, a:lastline, lineNum)
-      let url = origin . action . commit . relative . '#' . lineRange
+      let url = s:GithubUrl(origin) . action . commit . relative . '#' . lineRange
     elseif s:Bitbucket(origin)
       let lineRange = s:BitbucketLineRange(a:firstline, a:lastline, lineNum)
       let url = s:BitBucketUrl(origin) . action . commit . relative . '#' . lineRange
     elseif s:Gitlab(origin)
       let lineRange = s:GitLabLineRange(a:firstline, a:lastline, lineNum)
       let url = s:GitLabUrl(origin) . action . commit . relative . '#' . lineRange
+    elseif s:CGit(origin)
+      let lineRange = s:CGitLineRange(a:firstline, a:lastline, lineNum)
+      let url = s:CGitUrl(origin) . action . commit . relative . '#' . lineRange
     endif
 
     let l:finalCmd = g:gh_open_command . url
@@ -107,16 +93,24 @@ endfun
 
 func! s:Action(origin, action)
   if a:action == 'blame'
-    if s:Bitbucket(a:origin)
+    if s:Github(a:origin)
+      return '/blame/'
+    elseif s:Bitbucket(a:origin)
       return '/annotate/'
-    else
+    elseif s:GitLab(a:origin)
+      return '/blame/'
+    elseif s:CGit(a:origin)
       return '/blame/'
     endif
   elseif a:action == 'blob'
-    if s:Bitbucket(a:origin)
-      return '/src/'
-    else
+    if s:Github(a:origin)
       return '/blob/'
+    elseif s:Bitbucket(a:origin)
+      return '/src/'
+    elseif s:GitLab(a:origin)
+      return '/blob/'
+    elseif s:CGit(a:origin)
+      return '/tree/'
     endif
   endif
 endfunc
@@ -139,6 +133,13 @@ endfunc
 
 func! s:Gitlab(origin)
   return exists('g:gh_gitlab_domain') && match(a:origin, g:gh_gitlab_domain) || match(a:origin, 'gitlab') >= 0
+endfunc
+
+func! s:CGit(origin)
+  " TODO: There is no one major site for hosting all cgit, like in github.com.
+  " Instead, cgit frontend is used by various open source communities. For now
+  " only default to cgit's own hosted site.
+  return exists('g:gh_cgit_domain') && match(a:origin, g:gh_cgit_domain) || match(a:origin, 'git.zx2c4.com') >= 0
 endfunc
 
 func! s:GithubLineLange(firstLine, lastLine, lineNum)
@@ -165,20 +166,64 @@ func! s:GitLabLineRange(firstLine, lastLine, lineNum)
   endif
 endfunc
 
+func! s:CGitLineRange(firstLine, lastLine, lineNum)
+    " TODO: Does cgit gui support line number ranges ? Until we figure out
+    " ignore the lastLine
+    return '#n' . a:lineNum
+endfunc
+
 func! s:StripNL(l)
   return substitute(a:l, '\n$', '', '')
 endfun
 
+func! s:StripSuffix(o,fix)
+  return substitute(a:o, a:fix . '$' , '', '')
+endfun
+
+func! s:StripPrefix(o,fix)
+  return substitute(a:o, '^' . a:fix , '', '')
+endfun
+
+func! s:TransformSSHToHTTPS(o)
+    " If the remote is using ssh protocol, we need to turn a git remote like this:
+    " `git@github.com:<suffix>`
+    " To a url like this:
+    " `https://github.com/<suffix>`
+    let l:rv = o
+    let l:sed_cmd = "sed 's\/^[^@:]*@\\([^:]*\\):\/https:\\\/\\\/\\1\\\/\/;'"
+    let l:rv = system("echo " . l:rv . " | " . sed_cmd)
+    return l:rv
+endfun
+
+func! s:GithubUrl(origin)
+  let l:rv = s:TransformSSHToHTTPS(a:origin)
+  let l:rv = s:StripSuffix(l:rv, '.git')
+  return l:rv
+endfunc
+
 func! s:BitBucketUrl(origin)
-  return substitute(a:origin, '\(:\/\/\)\@<=.*@', '', '')
+  let l:rv = s:TransformSSHToHTTPS(a:origin)
+  let l:rv = s:StripSuffix(l:rv, '.git')
+  let l:rv = substitute(l:rv, '\(:\/\/\)\@<=.*@', '', '')
+  return l:rv
 endfunc
 
 func! s:GitLabUrl(origin)
-  let l:origin = a:origin
+  let l:rv = s:TransformSSHToHTTPS(a:origin)
+  let l:rv = s:StripSuffix(l:rv, '.git')
   if g:gh_gitlab_only_http
-    let l:origin = substitute(l:origin, 'https://', 'http://', '')
+    let l:rv= substitute(l:rv, 'https://', 'http://', '')
   endif
-  return l:origin
+  return l:rv
+endfunc
+
+func! s:CGitUrl(origin)
+    " Possible values for a cgit remote:
+    "  git://git.savannah.gnu.org/bash.git
+    "  https://git.savannah.gnu.org/git/bash.git
+    "  ssh://git.savannah.gnu.org:/srv/git/bash.git
+
+  return substitute(a:origin, '\(:\/\/\)\@<=.*@', '', '')
 endfunc
 
 noremap <silent> <Plug>(gh-line) :call <SID>gh_line('blob')<CR>
