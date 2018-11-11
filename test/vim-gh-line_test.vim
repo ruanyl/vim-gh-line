@@ -66,7 +66,7 @@ func! s:testGithub(sid)
     call assert_equal(l:act, 1, 'Github can parse github remote correctly')
 
     let l:act = s:callWithSID(a:sid, 'Github', 'https://otherDomain.com/ruanyl/vim-gh-line.git')
-    call assert_equal(l:act, 0, 'Github detect non-github domain.')
+    call assert_equal(l:act, 0, 'Github can detect non-github domain.')
 
 endfunction
 
@@ -80,7 +80,6 @@ func! s:runAllTests()
 
     let l:scriptName = 'vim-gh-line.vim'
     let l:scriptID = s:getScriptID(l:scriptName)
-    call s:persistedPrint('SID for script: ' . l:scriptName . ' is: ' . l:scriptID)
 
 
     " Add all test functions here.
@@ -89,20 +88,37 @@ func! s:runAllTests()
 
 endfunction
 
+func! s:exitWithError()
+    call s:persistedPrint('TESTS FAILED')
+    " quit with error
+    cq
+endfunction
+
 func! s:tryRunAllTests()
     try
         call s:runAllTests()
     catch
-        let l:error = 'Test error: ' . v:exception . ' (in ' . v:throwpoint . ')'
+        " In case of an exception always fail
+        let l:error = 'Exception: ' . v:exception . ' (in ' . v:throwpoint . ')'
         call s:persistedPrint(l:error)
-        call s:persistedPrint('TESTS FAILED')
-        " quit with error
-        cq
-    finally
+        call s:exitWithError()
+    endtry
+
+    " No exception. But check for assertion errors
+    if len(v:errors) > 0
+        " We had assertion errors. Tests will fail
+        for err in v:errors
+            let l:error = 'assertion error: ' . err
+            call s:persistedPrint(l:error)
+        endfor
+        call s:exitWithError()
+    else
+        " No exception, no assertion errors.
         call s:persistedPrint('TESTS PASSED')
         " quit with sucess
         qall
-    endtry
+    endif
+
 endfunction
 
 command!  RunAllTests call s:tryRunAllTests()
