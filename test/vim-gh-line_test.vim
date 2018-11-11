@@ -4,7 +4,36 @@ if exists('g:loaded_vim_gt_line_test') || &compatible
 endif
 let g:loaded_vim_gt_line_test = 1
 
-" Print the given string in vim and also outside of vim.
+
+func! s:testGithub(sid)
+    call s:persistedPrint('Calling testGithub')
+
+    let l:act = s:callWithSID(a:sid, 'Github', 'https://github.com/ruanyl/vim-gh-line.git')
+    call assert_equal(l:act, 1, 'Github can parse github remote correctly')
+
+    let l:act = s:callWithSID(a:sid, 'Github', 'https://otherDomain.com/ruanyl/vim-gh-line.git')
+    call assert_equal(l:act, 0, 'Github can detect non-github domain.')
+
+endfunction
+
+
+" runAllTests is the entrance function of this test file. It is called from the
+" RunAllTests command. Right now all other test functions need to be explicitly
+" called in it. Once you add a new test function, make sure you modify
+" runAllTest too.
+func! s:runAllTests()
+    call s:persistedPrint('Calling runAllTest')
+
+    let l:scriptName = 'vim-gh-line.vim'
+    let l:scriptID = s:getScriptID(l:scriptName)
+
+
+    " Add all test functions here.
+    call s:testGithub(l:scriptID)
+
+endfunction
+
+" persistedPrint prints the given string in vim and also outside of vim.
 func! s:persistedPrint(output)
   echom a:output
 
@@ -15,10 +44,10 @@ func! s:persistedPrint(output)
   call delete(tmp)
 endfunction
 
-" Given the scriptName return the SID for the current runtime of vim.
-" Lists all sourced scripts, finds the scrip line that mathes the given
-" scriptName. Expects only one match. Then parses the line describing the
-" given scriptName
+" getScriptID returns the SID of the given scriptName in the current runtime
+" of vim.  Lists all sourced scripts, finds the line that mathes the
+" given scriptName. Expects only one match. Then parses the line describing
+" the given scriptName.
 func! s:getScriptID(scriptName)
 
     let l:allScripts = split(execute('scriptnames'), '\n')
@@ -52,41 +81,14 @@ func! s:getScriptID(scriptName)
     return l:rv
 endfunction
 
-
+" callWithSID gives us the ability to call script local functions in the
+" plugin implementation. For implementation details see
+" https://vi.stackexchange.com/a/17871/13792
 func! s:callWithSID(sid,funcName,...)
     let l:FuncRef = function('<SNR>' . a:sid . '_' . a:funcName)
     let l:rv = call(l:FuncRef, a:000)
     return l:rv
 endfunc
-
-func! s:testGithub(sid)
-    call s:persistedPrint('Calling testGithub')
-
-    let l:act = s:callWithSID(a:sid, 'Github', 'https://github.com/ruanyl/vim-gh-line.git')
-    call assert_equal(l:act, 1, 'Github can parse github remote correctly')
-
-    let l:act = s:callWithSID(a:sid, 'Github', 'https://otherDomain.com/ruanyl/vim-gh-line.git')
-    call assert_equal(l:act, 0, 'Github can detect non-github domain.')
-
-endfunction
-
-
-" runAllTests is the entrance function of this test file. It is called from the
-" RunAllTests command. Right now all other test functions need to be explicitly
-" called in it. Once you add a new test function, make sure you modify
-" runAllTest too.
-func! s:runAllTests()
-    call s:persistedPrint('Calling runAllTest')
-
-    let l:scriptName = 'vim-gh-line.vim'
-    let l:scriptID = s:getScriptID(l:scriptName)
-
-
-    " Add all test functions here.
-    call s:testGithub(l:scriptID)
-
-
-endfunction
 
 func! s:exitWithError()
     call s:persistedPrint('TESTS FAILED')
@@ -94,6 +96,8 @@ func! s:exitWithError()
     cq
 endfunction
 
+" tryRunAllTests, does error checking after all tests are called. Catches
+" exceptions and checks for failed assertions.
 func! s:tryRunAllTests()
     try
         call s:runAllTests()
