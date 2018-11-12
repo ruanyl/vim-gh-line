@@ -3,7 +3,7 @@
 set -euxo pipefail
 
 
-cd `dirname $0`
+cd `dirname "$0"`
 
 # Start vi in the cleanest possible way and only load the tests and the
 # plugin directory.
