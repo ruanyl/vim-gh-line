@@ -1,0 +1,39 @@
+language: c
+
+jobs:
+  include:
+
+    - stage: test
+      name: "Linux (GNU sed)"
+      os: linux
+      # xenial is the latest supported Ubuntu dist as for now.
+      # Ubuntu bionic support status:
+      # https://github.com/travis-ci/travis-ci/issues/9928
+      dist: xenial
+      install:
+        # Vim shipped in xenial is quite old (7.4).
+        # When bionic support will be added to travis, everything below
+        # can be removed in favor of installing `vim` from apt.
+        # Inspired by https://github.com/kana/vim-vspec/blob/master/.travis.yml
+        - curl https://raw.githubusercontent.com/kana/vim-version-manager/master/bin/vvm | python - setup || true
+        # vvm is an rvm-alike for installing specific versions if vim.
+        - source ~/.vvm/etc/login
+        - vvm update_itself
+        - vvm install vimorg--v8.1.0001 --with-features=huge
+        - vvm use vimorg--v8.1.0001
+      cache:
+        directories:
+          - $HOME/.vvm
+
+    - stage: test
+      name: "macOS (BSD sed)"
+      os: osx
+      addons:
+        homebrew:
+          packages:
+            - vim
+
+before_script:
+  - vim --version
+script:
+  - ./test/run.sh
