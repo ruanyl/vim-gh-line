@@ -16,6 +16,21 @@ func! s:testGithub(sid)
 
 endfunction
 
+func! s:testCommit(sid)
+    call s:persistedPrint('Calling Commit')
+    
+    let l:fileDir = resolve(expand("%:p:h"))
+    let l:cdDir = "cd '" . fileDir . "'; "
+ 
+    let l:branch = system(l:cdDir . 'git rev-parse --abbrev-ref HEAD')
+    
+    let g:gh_use_canonical = 0
+    let l:act = s:callWithSID(a:sid, 'Commit', l:cdDir)
+    call assert_match(l:branch, l:act, 'Expected to find branch name in the Commit output ')
+    unlet g:gh_use_canonical
+
+endfunction 
+
 
 " runAllTests is the entrance function of this test file. It is called from the
 " RunAllTests command. Right now all other test functions need to be explicitly
@@ -30,6 +45,7 @@ func! s:runAllTests()
 
     " Add all test functions here.
     call s:testGithub(l:scriptID)
+    call s:testCommit(l:scriptID)
 
 endfunction
 

@@ -122,7 +122,7 @@ func! s:Action(origin, action)
 endfunc
 
 func! s:Commit(cdDir)
-  if exists('g:gh_use_canonical')
+  if exists('g:gh_use_canonical') && g:gh_use_canonical > 0
     return system(a:cdDir . 'git rev-parse HEAD')
   else
     return system(a:cdDir . 'git rev-parse --abbrev-ref HEAD')
