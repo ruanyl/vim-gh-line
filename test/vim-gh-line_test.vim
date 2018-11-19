@@ -8,29 +8,97 @@ let g:loaded_vim_gt_line_test = 1
 func! s:testGithub(sid)
     call s:persistedPrint('Calling testGithub')
 
-    let l:act = s:callWithSID(a:sid, 'Github', 'https://github.com/ruanyl/vim-gh-line.git')
-    call assert_equal(l:act, 1, 'Github can parse github remote correctly')
+    let l:act = s:callWithSID(a:sid, 'Github',
+        \ 'https://github.com/ruanyl/vim-gh-line.git')
+    call assert_equal(1, l:act, 'Github can parse github remote correctly')
 
-    let l:act = s:callWithSID(a:sid, 'Github', 'https://otherDomain.com/ruanyl/vim-gh-line.git')
-    call assert_equal(l:act, 0, 'Github can detect non-github domain.')
-
+    let l:act = s:callWithSID(a:sid, 'Github',
+        \ 'https://otherDomain.com/ruanyl/vim-gh-line.git')
+    call assert_equal(0, l:act, 'Github can detect non-github domain.')
 endfunction
 
 func! s:testCommit(sid)
-    call s:persistedPrint('Calling Commit')
-    
+    call s:persistedPrint('Calling testCommit')
+
     let l:fileDir = resolve(expand("%:p:h"))
     let l:cdDir = "cd '" . fileDir . "'; "
- 
+
     let l:branch = system(l:cdDir . 'git rev-parse --abbrev-ref HEAD')
-    
+
     let g:gh_use_canonical = 0
     let l:act = s:callWithSID(a:sid, 'Commit', l:cdDir)
-    call assert_match(l:branch, l:act, 'Expected to find branch name in the Commit output ')
+    call assert_match(l:branch, l:act,
+        \ 'Expected to find branch name in the Commit output ')
     unlet g:gh_use_canonical
+endfunction
 
-endfunction 
+func! s:testGithubUrl(sid)
+    call s:persistedPrint('Calling testGithubUrl')
 
+    let l:act = s:callWithSID(a:sid, 'GithubUrl',
+        \ 'https://github.com/ruanyl/vim-gh-line.git')
+    call assert_equal('https://github.com/ruanyl/vim-gh-line', l:act,
+        \ 'GithubUrl unexpected result with https protocol')
+
+    let l:act = s:callWithSID(a:sid, 'GithubUrl',
+        \ 'git@github.com:ruanyl/vim-gh-line.git')
+    call assert_equal('https://github.com/ruanyl/vim-gh-line', l:act,
+        \ 'GithubUrl unexpected result with ssh protocol')
+endfunction
+
+func! s:testBitBucketUrl(sid)
+    call s:persistedPrint('Calling testBitBucketUrl')
+
+    let l:act = s:callWithSID(a:sid, 'BitBucketUrl',
+        \ 'https://bitbucket.org/atlassian/django_scim.git')
+    call assert_equal('https://bitbucket.org/atlassian/django_scim', l:act,
+        \ 'BitBucketUrl unexpected result with https protocol')
+
+    let l:act = s:callWithSID(a:sid, 'BitBucketUrl',
+        \ 'git@bitbucket.org:atlassian/django_scim.git')
+    call assert_equal('https://bitbucket.org/atlassian/django_scim', l:act,
+        \ 'BitBucketUrl unexpected result with ssh protocol')
+endfunction
+
+func! s:testGitLabUrl(sid)
+    call s:persistedPrint('Calling testGitLabUrl')
+
+    let l:act = s:callWithSID(a:sid, 'GitLabUrl',
+        \ 'https://gitlab.com/gitlab-org/gitlab-ce.git')
+    call assert_equal('https://gitlab.com/gitlab-org/gitlab-ce', l:act,
+        \ 'GitLabUrl unexpected result with https protocol')
+
+    let l:act = s:callWithSID(a:sid, 'GitLabUrl',
+        \ 'git@gitlab.com:gitlab-org/gitlab-ce.git')
+    call assert_equal('https://gitlab.com/gitlab-org/gitlab-ce', l:act,
+        \ 'GitLabUrl unexpected result with ssh protocol')
+endfunction
+
+
+func! s:testCGitUrl(sid)
+    call s:persistedPrint('Calling testCGitUrl')
+
+    let g:gh_cgit_pattern_to_url = [
+        \ ['.\+git.savannah.gnu.org/git/', 'http://git.savannah.gnu.org/cgit/'],
+        \ ['.\+git.savannah.gnu.org:/srv/git/', 'http://git.savannah.gnu.org/cgit/'],
+        \ ]
+
+    " Possible remotes for bash.git repo are listed here
+    " https://savannah.gnu.org/git/?group=bash
+    " and here
+    " http://git.savannah.gnu.org/cgit/bash.git/
+    let l:possibleRemotes = [
+        \ 'https://git.savannah.gnu.org/git/bash.git',
+        \ 'myUserName@git.savannah.gnu.org:/srv/git/bash.git',
+    \ ]
+    for l:currRemote in l:possibleRemotes
+        let l:act = s:callWithSID(a:sid, 'CGitUrl', l:currRemote)
+        call assert_equal('http://git.savannah.gnu.org/cgit/bash.git', l:act,
+            \ 'CgitUrl unexpected result with remote: ' . l:currRemote)
+    endfor
+
+
+endfunction
 
 " runAllTests is the entrance function of this test file. It is called from the
 " RunAllTests command. Right now all other test functions need to be explicitly
@@ -46,6 +114,11 @@ func! s:runAllTests()
     " Add all test functions here.
     call s:testGithub(l:scriptID)
     call s:testCommit(l:scriptID)
+
+    call s:testGithubUrl(l:scriptID)
+    call s:testBitBucketUrl(l:scriptID)
+    call s:testGitLabUrl(l:scriptID)
+    call s:testCGitUrl(l:scriptID)
 
 endfunction
 

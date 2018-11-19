@@ -72,6 +72,35 @@ Use self deployed gitlab only with http:
 let g:gh_gitlab_only_http = 1
 ```
 
+Use a git remote with CGit front end:
+For CGit frontends, the user needs to specify a pattern -> remote url mapping.
+(With CGit there is no strict standard how the webpage url is formed.)
+```
+let g:gh_cgit_pattern_to_url = [ [{pattern}, {sub}], ... ]
+```
+
+The `g:gh_cgit_pattern_to_url` variable is a list of tuples. Each tuple is of
+form `[{pattern}, {sub}]`. A remote in a repo is matched in order against each
+`pattern` in the tuples in `g:gh_cgit_pattern_to_url`. The `sub` of the first
+tuple whose `pattern` matches will be used in a
+[`substitute()`](http://vimhelp.appspot.com/eval.txt.html#substitute%28%29)
+command to compile the final url.
+
+For example say you are working on the `bash` source code the remote of your
+local repo is `https://git.savannah.gnu.org/git/bash.git`. And the CGit front
+end url for a line link looks like
+`http://git.savannah.gnu.org/cgit/bash.git/tree/Makefile.in?id=64447609994bfddeef1061948022c074093e9a9f#n12`.
+
+The `g:gh_cgit_pattern_to_url` could  be
+```
+let g:gh_cgit_pattern_to_url = [
+    \ ['.\+git.savannah.gnu.org/git/', 'http://git.savannah.gnu.org/cgit/'],
+ \ ]
+```
+
+TODO: Add more descriptions here
+
+
 Debugging
 ----------
 

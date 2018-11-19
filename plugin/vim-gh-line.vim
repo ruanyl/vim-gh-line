@@ -44,6 +44,10 @@ if !exists('g:gh_gitlab_only_http')
     let g:gh_gitlab_only_http = 0
 endif
 
+if !exists('g:gh_cgit_pattern_to_url')
+    let g:gh_cgit_pattern_to_url = []
+endif
+
 func! s:gh_line(action) range
     " Get Line Number/s
     let lineNum = line('.')
@@ -176,40 +180,44 @@ func! s:StripNL(l)
   return substitute(a:l, '\n$', '', '')
 endfun
 
-func! s:StripSuffix(o,fix)
-  return substitute(a:o, a:fix . '$' , '', '')
+func! s:StripSuffix(input,fix)
+  return substitute(a:input, a:fix . '$' , '', '')
 endfun
 
-func! s:StripPrefix(o,fix)
-  return substitute(a:o, '^' . a:fix , '', '')
+func! s:StripPrefix(input,fix)
+  return substitute(a:input, '^' . a:fix , '', '')
 endfun
 
-func! s:TransformSSHToHTTPS(o)
+func! s:TransformSSHToHTTPS(input)
     " If the remote is using ssh protocol, we need to turn a git remote like this:
     " `git@github.com:<suffix>`
     " To a url like this:
     " `https://github.com/<suffix>`
-    let l:rv = o
+    let l:rv = a:input
     let l:sed_cmd = "sed 's\/^[^@:]*@\\([^:]*\\):\/https:\\\/\\\/\\1\\\/\/;'"
-    let l:rv = system("echo " . l:rv . " | " . sed_cmd)
+    let l:rv = system("echo " . l:rv . " | " . l:sed_cmd)
     return l:rv
 endfun
 
 func! s:GithubUrl(origin)
   let l:rv = s:TransformSSHToHTTPS(a:origin)
+  let l:rv = s:StripNL(l:rv)
   let l:rv = s:StripSuffix(l:rv, '.git')
   return l:rv
 endfunc
 
 func! s:BitBucketUrl(origin)
   let l:rv = s:TransformSSHToHTTPS(a:origin)
+  let l:rv = s:StripNL(l:rv)
   let l:rv = s:StripSuffix(l:rv, '.git')
+  " TODO: What does the following line do ?
   let l:rv = substitute(l:rv, '\(:\/\/\)\@<=.*@', '', '')
   return l:rv
 endfunc
 
 func! s:GitLabUrl(origin)
   let l:rv = s:TransformSSHToHTTPS(a:origin)
+  let l:rv = s:StripNL(l:rv)
   let l:rv = s:StripSuffix(l:rv, '.git')
   if g:gh_gitlab_only_http
     let l:rv= substitute(l:rv, 'https://', 'http://', '')
@@ -218,12 +226,44 @@ func! s:GitLabUrl(origin)
 endfunc
 
 func! s:CGitUrl(origin)
-    " Possible values for a cgit remote:
-    "  git://git.savannah.gnu.org/bash.git
-    "  https://git.savannah.gnu.org/git/bash.git
-    "  ssh://git.savannah.gnu.org:/srv/git/bash.git
+    " CGit urls do not follow a regular consistent standard. For example the
+    " following are all valid CGit urls:
+    "
+    " (1) https://repo.or.cz/clang.git/...
+    " (2) http://git.savannah.gnu.org/cgit/bash.git/...
+    " (3) https://git.zx2c4.com/linux-dev/...
+    " (4) https://git.yoctoproject.org/cgit.cgi/meta-intel/...
+    "
+    " Some of them have kept the .git extension in the url path (1),(2), some of them
+    " have a novel string as the first path component ( ..org/CGIT/bash..(2) or
+    " org/CGIT.CGI/meta (3) ), and some lack both (3). With these existing
+    " variations, there is no simple heuristic to return the url for a cgit
+    " remote.
+    "
+    " In addition to non-uniformity in the cgit front-end url, the remote
+    " names also do not follow an obvious pattern. For example for GNU Bash,
+    " (hosted on cgit) one of the following can be a remote:
+    "
+    " (A) git://git.savannah.gnu.org/bash.git
+    " (B) https://git.savannah.gnu.org/git/bash.git
+    " (C) ssh://git.savannah.gnu.org:/srv/git/bash.git
+    "
+    " The https based remote has `git` as the first path component (B), similarly,
+    " the ssh based remote has `srv` (C). We do not have a heuristic to
+    " compile the url by just looking at the remote. So we ask the user to
+    " provide a mapping via g:gh_cgit_pattern_to_url variable.
 
-  return substitute(a:origin, '\(:\/\/\)\@<=.*@', '', '')
+    for pair in g:gh_cgit_pattern_to_url
+      let l:pattern = pair[0]
+      let l:target = pair[1]
+      if a:origin =~ l:pattern
+          return substitute(a:origin, l:pattern, l:target, '')
+      endif
+    endfor
+
+    " No specified pattern has matched the passed origin
+    throw 'Could not match origin: ' . a:origin . ' with any of the patterns in ' .
+                \ 'g:gh_cgit_pattern_to_url:' . string(g:gh_cgit_pattern_to_url)
 endfunc
 
 noremap <silent> <Plug>(gh-line) :call <SID>gh_line('blob')<CR>
