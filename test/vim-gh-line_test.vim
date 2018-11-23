@@ -120,9 +120,45 @@ func! s:testCGitUrl(sid)
                 \ ' remote: ' . l:currRemote)
         endfor
     endfor
+
+    unlet g:gh_cgit_url_pattern_sub
 endfunction
 
-" #TODO :  Add a test case for the exception throw from CGitUrl
+func! s:testCGitUrlErrors(sid)
+    " testCGitUrlError verifies that the CGitUrl throws an exception if a
+    " remote cannot be match in any of the patterns in g:gh_cgit_url_pattern_sub
+    call s:persistedPrint('Calling testCGitUrlErrors')
+
+    let g:gh_cgit_url_pattern_sub = [
+        \ ['.\+git.savannah.gnu.org/git/', 'http://git.savannah.gnu.org/cgit/'],
+        \ ]
+
+    let l:urlToPossibleRemotes = [
+      \ ['https://cgit.kde.org/ark.git',
+          \ [
+            \ 'git://anongit.kde.org/ark.git',
+            \ 'https://anongit.kde.org/ark.git',
+            \ ]
+        \ ],
+    \ ]
+
+    for l:testCase in l:urlToPossibleRemotes
+        let l:possibleRemotes = l:testCase[1]
+
+        for l:currRemote in l:possibleRemotes
+            try
+                call s:callWithSID(a:sid, 'CGitUrl', l:currRemote)
+                assert_report('CGitUrl did not throw an expected exception')
+            catch
+                call assert_exception('Could not match origin',
+                    \ 'CGitUrl did not throw the expected exception')
+            endtry
+
+        endfor
+    endfor
+
+    unlet g:gh_cgit_url_pattern_sub
+endfunction
 
 " runAllTests is the entrance function of this test file. It is called from the
 " RunAllTests command. Right now all other test functions need to be explicitly
@@ -143,6 +179,7 @@ func! s:runAllTests()
     call s:testBitBucketUrl(l:scriptID)
     call s:testGitLabUrl(l:scriptID)
     call s:testCGitUrl(l:scriptID)
+    call s:testCGitUrlErrors(l:scriptID)
 
 endfunction
 
