@@ -255,9 +255,9 @@ func! s:CGitUrl(origin)
 
     for pair in g:gh_cgit_url_pattern_sub
       let l:pattern = pair[0]
-      let l:target = pair[1]
+      let l:sub= pair[1]
       if a:origin =~ l:pattern
-          return substitute(a:origin, l:pattern, l:target, '')
+          return substitute(a:origin, l:pattern, l:sub, '')
       endif
     endfor
 

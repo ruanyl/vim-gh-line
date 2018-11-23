@@ -120,9 +120,9 @@ func! s:testCGitUrl(sid)
                 \ ' remote: ' . l:currRemote)
         endfor
     endfor
-
-
 endfunction
+
+" #TODO :  Add a test case for the exception throw from CGitUrl
 
 " runAllTests is the entrance function of this test file. It is called from the
 " RunAllTests command. Right now all other test functions need to be explicitly
