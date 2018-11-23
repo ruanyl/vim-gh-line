@@ -44,8 +44,8 @@ if !exists('g:gh_gitlab_only_http')
     let g:gh_gitlab_only_http = 0
 endif
 
-if !exists('g:gh_cgit_pattern_to_url')
-    let g:gh_cgit_pattern_to_url = []
+if !exists('g:gh_cgit_url_pattern_sub')
+    let g:gh_cgit_url_pattern_sub = []
 endif
 
 func! s:gh_line(action) range
@@ -251,9 +251,9 @@ func! s:CGitUrl(origin)
     " The https based remote has `git` as the first path component (B), similarly,
     " the ssh based remote has `srv` (C). We do not have a heuristic to
     " compile the url by just looking at the remote. So we ask the user to
-    " provide a mapping via g:gh_cgit_pattern_to_url variable.
+    " provide a mapping via g:gh_cgit_url_pattern_sub variable.
 
-    for pair in g:gh_cgit_pattern_to_url
+    for pair in g:gh_cgit_url_pattern_sub
       let l:pattern = pair[0]
       let l:target = pair[1]
       if a:origin =~ l:pattern
@@ -263,7 +263,7 @@ func! s:CGitUrl(origin)
 
     " No specified pattern has matched the passed origin
     throw 'Could not match origin: ' . a:origin . ' with any of the patterns in ' .
-                \ 'g:gh_cgit_pattern_to_url:' . string(g:gh_cgit_pattern_to_url)
+                \ 'g:gh_cgit_url_pattern_sub:' . string(g:gh_cgit_url_pattern_sub)
 endfunc
 
 noremap <silent> <Plug>(gh-line) :call <SID>gh_line('blob')<CR>

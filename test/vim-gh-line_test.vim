@@ -78,7 +78,7 @@ endfunction
 func! s:testCGitUrl(sid)
     call s:persistedPrint('Calling testCGitUrl')
 
-    let g:gh_cgit_pattern_to_url = [
+    let g:gh_cgit_url_pattern_sub = [
         \ ['.\+git.savannah.gnu.org/git/', 'http://git.savannah.gnu.org/cgit/'],
         \ ['.\+git.savannah.gnu.org:/srv/git/', 'http://git.savannah.gnu.org/cgit/'],
         \ ['.\+git.kernel.org/', 'https://git.kernel.org/'],

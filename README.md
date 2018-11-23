@@ -76,12 +76,12 @@ Use a git remote with CGit front end:
 For CGit frontends, the user needs to specify a pattern -> remote url mapping.
 (With CGit there is no strict standard how the webpage url is formed.)
 ```
-let g:gh_cgit_pattern_to_url = [ [{pattern}, {sub}], ... ]
+let g:gh_cgit_url_pattern_sub = [ [{pattern}, {sub}], ... ]
 ```
 
-The `g:gh_cgit_pattern_to_url` variable is a list of tuples. Each tuple is of
+The `g:gh_cgit_url_pattern_sub` variable is a list of tuples. Each tuple is of
 form `[{pattern}, {sub}]`. A remote in a repo is matched in order against each
-`pattern` in the tuples in `g:gh_cgit_pattern_to_url`. The `sub` of the first
+`pattern` in the tuples in `g:gh_cgit_url_pattern_sub`. The `sub` of the first
 tuple whose `pattern` matches will be used in a
 [`substitute()`](http://vimhelp.appspot.com/eval.txt.html#substitute%28%29)
 command to compile the final url.
@@ -91,9 +91,9 @@ local repo is `https://git.savannah.gnu.org/git/bash.git`. And the CGit front
 end url for a line link looks like
 `http://git.savannah.gnu.org/cgit/bash.git/tree/Makefile.in?id=64447609994bfddeef1061948022c074093e9a9f#n12`.
 
-The `g:gh_cgit_pattern_to_url` could  be
+The `g:gh_cgit_url_pattern_sub` could  be
 ```
-let g:gh_cgit_pattern_to_url = [
+let g:gh_cgit_url_pattern_sub = [
     \ ['.\+git.savannah.gnu.org/git/', 'http://git.savannah.gnu.org/cgit/'],
  \ ]
 ```
