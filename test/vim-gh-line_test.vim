@@ -81,20 +81,44 @@ func! s:testCGitUrl(sid)
     let g:gh_cgit_pattern_to_url = [
         \ ['.\+git.savannah.gnu.org/git/', 'http://git.savannah.gnu.org/cgit/'],
         \ ['.\+git.savannah.gnu.org:/srv/git/', 'http://git.savannah.gnu.org/cgit/'],
+        \ ['.\+git.kernel.org/', 'https://git.kernel.org/'],
+        \ ['.\+anongit.kde.org/', 'https://cgit.kde.org/'],
         \ ]
 
     " Possible remotes for bash.git repo are listed here
     " https://savannah.gnu.org/git/?group=bash
     " and here
     " http://git.savannah.gnu.org/cgit/bash.git/
-    let l:possibleRemotes = [
-        \ 'https://git.savannah.gnu.org/git/bash.git',
-        \ 'myUserName@git.savannah.gnu.org:/srv/git/bash.git',
+    let l:urlToPossibleRemotes = [
+      \ ['http://git.savannah.gnu.org/cgit/bash.git',
+          \ [
+            \ 'https://git.savannah.gnu.org/git/bash.git',
+            \ 'myUserName@git.savannah.gnu.org:/srv/git/bash.git',
+            \ ]
+        \ ],
+      \ ['https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git',
+          \ [
+            \ 'git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git',
+            \ 'https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git',
+            \ ]
+        \ ],
+      \ ['https://cgit.kde.org/ark.git',
+          \ [
+            \ 'git://anongit.kde.org/ark.git',
+            \ 'https://anongit.kde.org/ark.git',
+            \ ]
+        \ ],
     \ ]
-    for l:currRemote in l:possibleRemotes
-        let l:act = s:callWithSID(a:sid, 'CGitUrl', l:currRemote)
-        call assert_equal('http://git.savannah.gnu.org/cgit/bash.git', l:act,
-            \ 'CgitUrl unexpected result with remote: ' . l:currRemote)
+
+    for l:testCase in l:urlToPossibleRemotes
+        let l:expectedUrl = l:testCase[0]
+        let l:possibleRemotes = l:testCase[1]
+        for l:currRemote in l:possibleRemotes
+            let l:act = s:callWithSID(a:sid, 'CGitUrl', l:currRemote)
+            call assert_equal(l:expectedUrl, l:act,
+                \ 'CgitUrl unexpected result with url: ' . l:expectedUrl .
+                \ ' remote: ' . l:currRemote)
+        endfor
     endfor
 
 
