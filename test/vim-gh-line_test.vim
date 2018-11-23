@@ -75,8 +75,11 @@ func! s:testGitLabUrl(sid)
 endfunction
 
 
-func! s:testCGitUrl(sid)
-    call s:persistedPrint('Calling testCGitUrl')
+func! s:testGhCgitUrlPatternSubUsage(sid)
+    " testGhCgitUrlPatternSubUsage verifies code that uses g:gh_cgit_url_pattern_sub
+    " variable. Verify that CgitUrl() parses {pattern} and {sub} correctly and
+    " retuns expected results. Vefify that Cgit() return true
+    call s:persistedPrint('Calling testGhCgitUrlPatternSubUsage')
 
     let g:gh_cgit_url_pattern_sub = [
         \ ['.\+git.savannah.gnu.org/git/', 'http://git.savannah.gnu.org/cgit/'],
@@ -114,20 +117,28 @@ func! s:testCGitUrl(sid)
         let l:expectedUrl = l:testCase[0]
         let l:possibleRemotes = l:testCase[1]
         for l:currRemote in l:possibleRemotes
-            let l:act = s:callWithSID(a:sid, 'CGitUrl', l:currRemote)
+            " Verify CgitUrl()
+            let l:act = s:callWithSID(a:sid, 'CgitUrl', l:currRemote)
             call assert_equal(l:expectedUrl, l:act,
                 \ 'CgitUrl unexpected result with url: ' . l:expectedUrl .
                 \ ' remote: ' . l:currRemote)
+
+            " Verify Cgit()
+            let l:act = s:callWithSID(a:sid, 'Cgit', l:currRemote)
+            call assert_true(l:act,
+                \ 'Cgit did not return true on a remote that should match')
         endfor
     endfor
 
     unlet g:gh_cgit_url_pattern_sub
 endfunction
 
-func! s:testCGitUrlErrors(sid)
-    " testCGitUrlError verifies that the CGitUrl throws an exception if a
-    " remote cannot be match in any of the patterns in g:gh_cgit_url_pattern_sub
-    call s:persistedPrint('Calling testCGitUrlErrors')
+func! s:testGhCgitUrlPatternSubUsageErrors(sid)
+    " testGhCgitUrlPatternSubUsageErrors verifies that the CgitUrl throws an
+    " exception if a remote cannot be match in any of the patterns in
+    " g:gh_cgit_url_pattern_sub. Also Cgit() function returns false if a match
+    " cannot be found.
+    call s:persistedPrint('Calling testGhCgitUrlPatternSubUsageErrors')
 
     let g:gh_cgit_url_pattern_sub = [
         \ ['.\+git.savannah.gnu.org/git/', 'http://git.savannah.gnu.org/cgit/'],
@@ -146,13 +157,19 @@ func! s:testCGitUrlErrors(sid)
         let l:possibleRemotes = l:testCase[1]
 
         for l:currRemote in l:possibleRemotes
+            " Verify CgitUrl()
             try
-                call s:callWithSID(a:sid, 'CGitUrl', l:currRemote)
-                assert_report('CGitUrl did not throw an expected exception')
+                call s:callWithSID(a:sid, 'CgitUrl', l:currRemote)
+                assert_report('CgitUrl did not throw an expected exception')
             catch
                 call assert_exception('Could not match origin',
-                    \ 'CGitUrl did not throw the expected exception')
+                    \ 'CgitUrl did not throw the expected exception')
             endtry
+
+            " Verify Cgit()
+            let l:act = s:callWithSID(a:sid, 'Cgit', l:currRemote)
+            call assert_false(l:act,
+                \ 'Cgit did not return false on a remote that should not match')
 
         endfor
     endfor
@@ -178,8 +195,8 @@ func! s:runAllTests()
     call s:testGithubUrl(l:scriptID)
     call s:testBitBucketUrl(l:scriptID)
     call s:testGitLabUrl(l:scriptID)
-    call s:testCGitUrl(l:scriptID)
-    call s:testCGitUrlErrors(l:scriptID)
+    call s:testGhCgitUrlPatternSubUsage(l:scriptID)
+    call s:testGhCgitUrlPatternSubUsageErrors(l:scriptID)
 
 endfunction
 

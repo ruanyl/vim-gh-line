@@ -83,9 +83,9 @@ func! s:gh_line(action) range
     elseif s:Gitlab(origin)
       let lineRange = s:GitLabLineRange(a:firstline, a:lastline, lineNum)
       let url = s:GitLabUrl(origin) . action . commit . relative . '#' . lineRange
-    elseif s:CGit(origin)
-      let lineRange = s:CGitLineRange(a:firstline, a:lastline, lineNum)
-      let url = s:CGitUrl(origin) . action . commit . relative . '#' . lineRange
+    elseif s:Cgit(origin)
+      let lineRange = s:CgitLineRange(a:firstline, a:lastline, lineNum)
+      let url = s:CgitUrl(origin) . action . commit . relative . '#' . lineRange
     endif
 
     let l:finalCmd = g:gh_open_command . url
@@ -103,7 +103,7 @@ func! s:Action(origin, action)
       return '/annotate/'
     elseif s:GitLab(a:origin)
       return '/blame/'
-    elseif s:CGit(a:origin)
+    elseif s:Cgit(a:origin)
       return '/blame/'
     endif
   elseif a:action == 'blob'
@@ -113,7 +113,7 @@ func! s:Action(origin, action)
       return '/src/'
     elseif s:GitLab(a:origin)
       return '/blob/'
-    elseif s:CGit(a:origin)
+    elseif s:Cgit(a:origin)
       return '/tree/'
     endif
   endif
@@ -139,11 +139,21 @@ func! s:Gitlab(origin)
   return exists('g:gh_gitlab_domain') && match(a:origin, g:gh_gitlab_domain) || match(a:origin, 'gitlab') >= 0
 endfunc
 
-func! s:CGit(origin)
-  " TODO: There is no one major site for hosting all cgit, like in github.com.
-  " Instead, cgit frontend is used by various open source communities. For now
-  " only default to cgit's own hosted site.
-  return exists('g:gh_cgit_domain') && match(a:origin, g:gh_cgit_domain) || match(a:origin, 'git.zx2c4.com') >= 0
+func! s:Cgit(origin)
+  " Cgit returns true if origin is hosted on a Cgit frontend.
+  " There is no one major site for hosting repositories in cgit , like in github.com.
+  " Instead, cgit frontend is used by various open source communities with
+  " different organization names. We iterate over the
+  " g:gh_cgit_url_pattern_sub variable the user has provided.
+
+    for pair in g:gh_cgit_url_pattern_sub
+      let l:pattern = pair[0]
+      if a:origin =~ l:pattern
+          return 1
+      endif
+    endfor
+
+    return 0
 endfunc
 
 func! s:GithubLineLange(firstLine, lastLine, lineNum)
@@ -170,7 +180,7 @@ func! s:GitLabLineRange(firstLine, lastLine, lineNum)
   endif
 endfunc
 
-func! s:CGitLineRange(firstLine, lastLine, lineNum)
+func! s:CgitLineRange(firstLine, lastLine, lineNum)
     " TODO: Does cgit gui support line number ranges ? Until we figure out
     " ignore the lastLine
     return '#n' . a:lineNum
@@ -225,9 +235,9 @@ func! s:GitLabUrl(origin)
   return l:rv
 endfunc
 
-func! s:CGitUrl(origin)
-    " CGit urls do not follow a regular consistent standard. For example the
-    " following are all valid CGit urls:
+func! s:CgitUrl(origin)
+    " Cgit urls do not follow a regular consistent standard. For example the
+    " following are all valid Cgit urls:
     "
     " (1) https://repo.or.cz/clang.git/...
     " (2) http://git.savannah.gnu.org/cgit/bash.git/...

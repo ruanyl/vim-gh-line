@@ -72,8 +72,8 @@ let g:gh_gitlab_domain = "<your gitlab domain>"
 let g:gh_gitlab_only_http = 1
 ```
 
-#### Use a git remote with CGit front end:
-For CGit frontends, the user needs to specify a pattern -> sub mapping to
+#### Use a git remote with Cgit front end:
+For Cgit frontends, the user needs to specify a pattern -> sub mapping to
 compile the url. `vim-gh-line` uses the `origin` remote of your repo heuristicly to
 come up with the url of the hosting site. For cgit deployments, there is no
 simple heuristic to compile the url of the cgit frontend's webpage.
@@ -91,7 +91,7 @@ command to compile the final url.
 
 For example say you are working on the
 [`bash`](http://git.savannah.gnu.org/cgit/bash.git/) source code. The `origin` of
-your local repo is `https://git.savannah.gnu.org/git/bash.git`. And the CGit
+your local repo is `https://git.savannah.gnu.org/git/bash.git`. And the Cgit
 front end url for a line link looks like
 `http://git.savannah.gnu.org/cgit/bash.git/tree/Makefile.in?id=64447609994bfddeef1061948022c074093e9a9f#n12`.
 
