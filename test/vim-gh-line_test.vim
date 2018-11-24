@@ -108,7 +108,8 @@ endfunction
 func! s:testGhCgitUrlPatternSubUsage(sid)
     " testGhCgitUrlPatternSubUsage verifies code that uses g:gh_cgit_url_pattern_sub
     " variable. Verify that CgitUrl() parses {pattern} and {sub} correctly and
-    " retuns expected results. Vefify that Cgit() return true
+    " retuns expected results. Vefify that Cgit() returns true if a match can
+    " be found.
     call s:persistedPrint('Calling testGhCgitUrlPatternSubUsage')
 
     let g:gh_cgit_url_pattern_sub = [
