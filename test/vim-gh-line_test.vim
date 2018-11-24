@@ -166,7 +166,7 @@ endfunction
 
 func! s:testGhCgitUrlPatternSubUsageErrors(sid)
     " testGhCgitUrlPatternSubUsageErrors verifies that the CgitUrl throws an
-    " exception if a remote cannot be match in any of the patterns in
+    " exception if a remote cannot be matched in any of the patterns in
     " g:gh_cgit_url_pattern_sub. Also Cgit() function returns false if a match
     " cannot be found.
     call s:persistedPrint('Calling testGhCgitUrlPatternSubUsageErrors')
