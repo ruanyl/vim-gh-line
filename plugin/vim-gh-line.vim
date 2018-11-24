@@ -251,7 +251,7 @@ func! s:CgitUrl(origin)
     "
     " Some of them have kept the .git extension in the url path (1),(2), some of them
     " have a novel string as the first path component ( ..org/CGIT/bash..(2) or
-    " org/CGIT.CGI/meta (3) ), and some lack both (3). With these existing
+    " org/CGIT.CGI/meta (4) ), and some lack both (3). With these existing
     " variations, there is no simple heuristic to return the url for a cgit
     " remote.
     "
