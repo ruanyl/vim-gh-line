@@ -133,7 +133,7 @@ func! s:Commit(cdDir)
 endfunc
 
 func! s:Github(origin)
-  return exists('g:gh_github_domain') && match(a:origin, g:gh_github_domain) || match(a:origin, 'github') >= 0
+  return exists('g:gh_github_domain') && match(a:origin, g:gh_github_domain) >= 0 || match(a:origin, 'github') >= 0
 endfunc
 
 func! s:Bitbucket(origin)
@@ -141,7 +141,7 @@ func! s:Bitbucket(origin)
 endfunc
 
 func! s:Gitlab(origin)
-  return exists('g:gh_gitlab_domain') && match(a:origin, g:gh_gitlab_domain) || match(a:origin, 'gitlab') >= 0
+  return exists('g:gh_gitlab_domain') && match(a:origin, g:gh_gitlab_domain) >= 0 || match(a:origin, 'gitlab') >= 0
 endfunc
 
 func! s:Cgit(origin)

@@ -15,6 +15,22 @@ func! s:testGithub(sid)
     let l:act = s:callWithSID(a:sid, 'Github',
         \ 'https://otherDomain.com/ruanyl/vim-gh-line.git')
     call assert_equal(0, l:act, 'Github can detect non-github domain.')
+
+
+    let g:gh_github_domain = "git.dev.acme.net"
+
+    let l:act = s:callWithSID(a:sid, 'Github',
+        \ 'https://git.dev.acme.net/ruanyl/vim-gh-line.git')
+    call assert_equal(1, l:act,
+        \ 'Github can detect github domain while g:gh_github_domain is set')
+
+    let l:act = s:callWithSID(a:sid, 'Github',
+        \ 'https://otherDomain.com/ruanyl/vim-gh-line.git')
+    call assert_equal(0, l:act,
+        \ 'Github can detect non-github domain while g:gh_github_domain is set')
+
+    unlet g:gh_github_domain
+
 endfunction
 
 func! s:testCommit(sid)
