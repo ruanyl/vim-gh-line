@@ -109,7 +109,7 @@ func! s:Action(origin, action)
       return '/blame/'
     elseif s:Cgit(a:origin)
       " TODO: Most Cgit frontends do not support blame functionality
-      return '/blame/'
+      return '/blame'
     endif
   elseif a:action == 'blob'
     if s:Github(a:origin)
@@ -119,7 +119,7 @@ func! s:Action(origin, action)
     elseif s:GitLab(a:origin)
       return '/blob/'
     elseif s:Cgit(a:origin)
-      return '/tree/'
+      return '/tree'
     endif
   endif
 endfunc

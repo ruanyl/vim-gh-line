@@ -30,7 +30,21 @@ func! s:testGithub(sid)
         \ 'Github can detect non-github domain while g:gh_github_domain is set')
 
     unlet g:gh_github_domain
+endfunction
 
+func! s:testAction(sid)
+    call s:persistedPrint('Calling testAction')
+
+    let g:gh_cgit_url_pattern_sub = [
+        \ ['.\+git.savannah.gnu.org/git/', 'http://git.savannah.gnu.org/cgit/'],
+        \ ]
+
+    let l:act = s:callWithSID(a:sid, 'Action',
+        \ 'https://git.savannah.gnu.org/git/bash.git', 'blob')
+    call assert_equal('/tree', l:act,
+        \ 'Action did not return the correct value for blob in cgit repo')
+
+    unlet g:gh_cgit_url_pattern_sub
 endfunction
 
 func! s:testCommit(sid)
@@ -206,11 +220,13 @@ func! s:runAllTests()
 
     " Add all test functions here.
     call s:testGithub(l:scriptID)
+    call s:testAction(l:scriptID)
     call s:testCommit(l:scriptID)
 
     call s:testGithubUrl(l:scriptID)
     call s:testBitBucketUrl(l:scriptID)
     call s:testGitLabUrl(l:scriptID)
+
     call s:testGhCgitUrlPatternSubUsage(l:scriptID)
     call s:testGhCgitUrlPatternSubUsageErrors(l:scriptID)
 
