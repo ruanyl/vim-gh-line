@@ -85,7 +85,11 @@ func! s:gh_line(action) range
       let url = s:GitLabUrl(origin) . action . commit . relative . '#' . lineRange
     elseif s:Cgit(origin)
       let lineRange = s:CgitLineRange(a:firstline, a:lastline, lineNum)
-      let url = s:CgitUrl(origin) . action . commit . relative . '#' . lineRange
+      let l:commitStr = ''
+      if g:gh_use_canonical > 0
+          let l:commitStr = '?id=' . commit
+      endif
+      let url = s:CgitUrl(origin) . action . relative . l:commitStr . '#' . lineRange
     endif
 
     let l:finalCmd = g:gh_open_command . url
@@ -104,6 +108,7 @@ func! s:Action(origin, action)
     elseif s:GitLab(a:origin)
       return '/blame/'
     elseif s:Cgit(a:origin)
+      " TODO: Most Cgit frontends do not support blame functionality
       return '/blame/'
     endif
   elseif a:action == 'blob'
