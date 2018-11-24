@@ -188,7 +188,7 @@ endfunc
 func! s:CgitLineRange(firstLine, lastLine, lineNum)
     " TODO: Does cgit gui support line number ranges ? Until we figure out
     " ignore the lastLine
-    return '#n' . a:lineNum
+    return 'n' . a:lineNum
 endfunc
 
 func! s:StripNL(l)
