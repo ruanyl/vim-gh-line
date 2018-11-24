@@ -80,7 +80,7 @@ func! s:gh_line(action) range
     elseif s:Bitbucket(origin)
       let lineRange = s:BitbucketLineRange(a:firstline, a:lastline, lineNum)
       let url = s:BitBucketUrl(origin) . action . commit . relative . '#' . lineRange
-    elseif s:Gitlab(origin)
+    elseif s:GitLab(origin)
       let lineRange = s:GitLabLineRange(a:firstline, a:lastline, lineNum)
       let url = s:GitLabUrl(origin) . action . commit . relative . '#' . lineRange
     elseif s:Cgit(origin)
@@ -140,7 +140,7 @@ func! s:Bitbucket(origin)
   return match(a:origin, 'bitbucket.org') >= 0
 endfunc
 
-func! s:Gitlab(origin)
+func! s:GitLab(origin)
   return exists('g:gh_gitlab_domain') && match(a:origin, g:gh_gitlab_domain) >= 0 || match(a:origin, 'gitlab') >= 0
 endfunc
 
