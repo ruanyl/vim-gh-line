@@ -8,29 +8,205 @@ let g:loaded_vim_gt_line_test = 1
 func! s:testGithub(sid)
     call s:persistedPrint('Calling testGithub')
 
-    let l:act = s:callWithSID(a:sid, 'Github', 'https://github.com/ruanyl/vim-gh-line.git')
-    call assert_equal(l:act, 1, 'Github can parse github remote correctly')
+    let l:act = s:callWithSID(a:sid, 'Github',
+        \ 'https://github.com/ruanyl/vim-gh-line.git')
+    call assert_equal(1, l:act, 'Github can parse github remote correctly')
 
-    let l:act = s:callWithSID(a:sid, 'Github', 'https://otherDomain.com/ruanyl/vim-gh-line.git')
-    call assert_equal(l:act, 0, 'Github can detect non-github domain.')
+    let l:act = s:callWithSID(a:sid, 'Github',
+        \ 'https://otherDomain.com/ruanyl/vim-gh-line.git')
+    call assert_equal(0, l:act, 'Github can detect non-github domain.')
 
+
+    let g:gh_github_domain = "git.dev.acme.net"
+
+    let l:act = s:callWithSID(a:sid, 'Github',
+        \ 'https://git.dev.acme.net/ruanyl/vim-gh-line.git')
+    call assert_equal(1, l:act,
+        \ 'Github can detect github domain while g:gh_github_domain is set')
+
+    let l:act = s:callWithSID(a:sid, 'Github',
+        \ 'https://otherDomain.com/ruanyl/vim-gh-line.git')
+    call assert_equal(0, l:act,
+        \ 'Github can detect non-github domain while g:gh_github_domain is set')
+
+    unlet g:gh_github_domain
+endfunction
+
+func! s:testAction(sid)
+    call s:persistedPrint('Calling testAction')
+
+    let g:gh_cgit_url_pattern_sub = [
+        \ ['.\+git.savannah.gnu.org/git/', 'http://git.savannah.gnu.org/cgit/'],
+        \ ]
+
+    let l:act = s:callWithSID(a:sid, 'Action',
+        \ 'https://git.savannah.gnu.org/git/bash.git', 'blob')
+    call assert_equal('/tree', l:act,
+        \ 'Action did not return the correct value for blob in cgit repo')
+
+    unlet g:gh_cgit_url_pattern_sub
 endfunction
 
 func! s:testCommit(sid)
-    call s:persistedPrint('Calling Commit')
-    
+    call s:persistedPrint('Calling testCommit')
+
     let l:fileDir = resolve(expand("%:p:h"))
     let l:cdDir = "cd '" . fileDir . "'; "
- 
+
     let l:branch = system(l:cdDir . 'git rev-parse --abbrev-ref HEAD')
-    
+
     let g:gh_use_canonical = 0
     let l:act = s:callWithSID(a:sid, 'Commit', l:cdDir)
-    call assert_match(l:branch, l:act, 'Expected to find branch name in the Commit output ')
+    call assert_match(l:branch, l:act,
+        \ 'Expected to find branch name in the Commit output ')
     unlet g:gh_use_canonical
+endfunction
 
-endfunction 
+func! s:testGithubUrl(sid)
+    call s:persistedPrint('Calling testGithubUrl')
 
+    let l:act = s:callWithSID(a:sid, 'GithubUrl',
+        \ 'https://github.com/ruanyl/vim-gh-line.git')
+    call assert_equal('https://github.com/ruanyl/vim-gh-line', l:act,
+        \ 'GithubUrl unexpected result with https protocol')
+
+    let l:act = s:callWithSID(a:sid, 'GithubUrl',
+        \ 'git@github.com:ruanyl/vim-gh-line.git')
+    call assert_equal('https://github.com/ruanyl/vim-gh-line', l:act,
+        \ 'GithubUrl unexpected result with ssh protocol')
+endfunction
+
+func! s:testBitBucketUrl(sid)
+    call s:persistedPrint('Calling testBitBucketUrl')
+
+    let l:act = s:callWithSID(a:sid, 'BitBucketUrl',
+        \ 'https://bitbucket.org/atlassian/django_scim.git')
+    call assert_equal('https://bitbucket.org/atlassian/django_scim', l:act,
+        \ 'BitBucketUrl unexpected result with https protocol')
+
+    let l:act = s:callWithSID(a:sid, 'BitBucketUrl',
+        \ 'git@bitbucket.org:atlassian/django_scim.git')
+    call assert_equal('https://bitbucket.org/atlassian/django_scim', l:act,
+        \ 'BitBucketUrl unexpected result with ssh protocol')
+endfunction
+
+func! s:testGitLabUrl(sid)
+    call s:persistedPrint('Calling testGitLabUrl')
+
+    let l:act = s:callWithSID(a:sid, 'GitLabUrl',
+        \ 'https://gitlab.com/gitlab-org/gitlab-ce.git')
+    call assert_equal('https://gitlab.com/gitlab-org/gitlab-ce', l:act,
+        \ 'GitLabUrl unexpected result with https protocol')
+
+    let l:act = s:callWithSID(a:sid, 'GitLabUrl',
+        \ 'git@gitlab.com:gitlab-org/gitlab-ce.git')
+    call assert_equal('https://gitlab.com/gitlab-org/gitlab-ce', l:act,
+        \ 'GitLabUrl unexpected result with ssh protocol')
+endfunction
+
+
+func! s:testGhCgitUrlPatternSubUsage(sid)
+    " testGhCgitUrlPatternSubUsage verifies code that uses g:gh_cgit_url_pattern_sub
+    " variable. Verify that CgitUrl() parses {pattern} and {sub} correctly and
+    " retuns expected results. Vefify that Cgit() returns true if a match can
+    " be found.
+    call s:persistedPrint('Calling testGhCgitUrlPatternSubUsage')
+
+    let g:gh_cgit_url_pattern_sub = [
+        \ ['.\+git.savannah.gnu.org/git/', 'http://git.savannah.gnu.org/cgit/'],
+        \ ['.\+git.savannah.gnu.org:/srv/git/', 'http://git.savannah.gnu.org/cgit/'],
+        \ ['.\+git.kernel.org/', 'https://git.kernel.org/'],
+        \ ['.\+anongit.kde.org/', 'https://cgit.kde.org/'],
+        \ ]
+
+    " Possible remotes for bash.git repo are listed here
+    " https://savannah.gnu.org/git/?group=bash
+    " and here
+    " http://git.savannah.gnu.org/cgit/bash.git/
+    let l:urlToPossibleRemotes = [
+      \ ['http://git.savannah.gnu.org/cgit/bash.git',
+          \ [
+            \ 'https://git.savannah.gnu.org/git/bash.git',
+            \ 'myUserName@git.savannah.gnu.org:/srv/git/bash.git',
+            \ ]
+        \ ],
+      \ ['https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git',
+          \ [
+            \ 'git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git',
+            \ 'https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git',
+            \ ]
+        \ ],
+      \ ['https://cgit.kde.org/ark.git',
+          \ [
+            \ 'git://anongit.kde.org/ark.git',
+            \ 'https://anongit.kde.org/ark.git',
+            \ ]
+        \ ],
+    \ ]
+
+    for l:testCase in l:urlToPossibleRemotes
+        let l:expectedUrl = l:testCase[0]
+        let l:possibleRemotes = l:testCase[1]
+        for l:currRemote in l:possibleRemotes
+            " Verify CgitUrl()
+            let l:act = s:callWithSID(a:sid, 'CgitUrl', l:currRemote)
+            call assert_equal(l:expectedUrl, l:act,
+                \ 'CgitUrl unexpected result with url: ' . l:expectedUrl .
+                \ ' remote: ' . l:currRemote)
+
+            " Verify Cgit()
+            let l:act = s:callWithSID(a:sid, 'Cgit', l:currRemote)
+            call assert_true(l:act,
+                \ 'Cgit did not return true on a remote that should match')
+        endfor
+    endfor
+
+    unlet g:gh_cgit_url_pattern_sub
+endfunction
+
+func! s:testGhCgitUrlPatternSubUsageErrors(sid)
+    " testGhCgitUrlPatternSubUsageErrors verifies that the CgitUrl throws an
+    " exception if a remote cannot be matched in any of the patterns in
+    " g:gh_cgit_url_pattern_sub. Also Cgit() function returns false if a match
+    " cannot be found.
+    call s:persistedPrint('Calling testGhCgitUrlPatternSubUsageErrors')
+
+    let g:gh_cgit_url_pattern_sub = [
+        \ ['.\+git.savannah.gnu.org/git/', 'http://git.savannah.gnu.org/cgit/'],
+        \ ]
+
+    let l:urlToPossibleRemotes = [
+      \ ['https://cgit.kde.org/ark.git',
+          \ [
+            \ 'git://anongit.kde.org/ark.git',
+            \ 'https://anongit.kde.org/ark.git',
+            \ ]
+        \ ],
+    \ ]
+
+    for l:testCase in l:urlToPossibleRemotes
+        let l:possibleRemotes = l:testCase[1]
+
+        for l:currRemote in l:possibleRemotes
+            " Verify CgitUrl()
+            try
+                call s:callWithSID(a:sid, 'CgitUrl', l:currRemote)
+                assert_report('CgitUrl did not throw an expected exception')
+            catch
+                call assert_exception('Could not match origin',
+                    \ 'CgitUrl did not throw the expected exception')
+            endtry
+
+            " Verify Cgit()
+            let l:act = s:callWithSID(a:sid, 'Cgit', l:currRemote)
+            call assert_false(l:act,
+                \ 'Cgit did not return false on a remote that should not match')
+
+        endfor
+    endfor
+
+    unlet g:gh_cgit_url_pattern_sub
+endfunction
 
 " runAllTests is the entrance function of this test file. It is called from the
 " RunAllTests command. Right now all other test functions need to be explicitly
@@ -45,7 +221,15 @@ func! s:runAllTests()
 
     " Add all test functions here.
     call s:testGithub(l:scriptID)
+    call s:testAction(l:scriptID)
     call s:testCommit(l:scriptID)
+
+    call s:testGithubUrl(l:scriptID)
+    call s:testBitBucketUrl(l:scriptID)
+    call s:testGitLabUrl(l:scriptID)
+
+    call s:testGhCgitUrlPatternSubUsage(l:scriptID)
+    call s:testGhCgitUrlPatternSubUsageErrors(l:scriptID)
 
 endfunction
 

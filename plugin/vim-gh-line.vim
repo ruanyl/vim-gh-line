@@ -44,6 +44,10 @@ if !exists('g:gh_gitlab_only_http')
     let g:gh_gitlab_only_http = 0
 endif
 
+if !exists('g:gh_cgit_url_pattern_sub')
+    let g:gh_cgit_url_pattern_sub = []
+endif
+
 func! s:gh_line(action) range
     " Get Line Number/s
     let lineNum = line('.')
@@ -51,24 +55,7 @@ func! s:gh_line(action) range
     let fileDir = resolve(expand("%:p:h"))
     let cdDir = "cd '" . fileDir . "'; "
 
-    " If the remote is using ssh protocol, we need to turn a git remote like this:
-    " `git@github.com:user/repo.git`
-    " To a url like this:
-    " `https://github.com/user/repo`
-    "
-    " If the remote is using https protocol we only need to get rid of the
-    " trailing `.git`. Turn a git remote like this:
-    " `https://github.com/user/repo.git`
-    " To a url like this:
-    " `https://github.com/user/repo`
-    "
-    " So we do the following replacements:
-    " 1. `<userName>@<url>:<user>/<repo>` becomes
-    "    https://<url>/<user>/<repo>. Only applicable for remotes using ssh
-    "    protocol.
-    " 2. Strip the `.git` part in the end.
-    let sed_cmd = "sed 's\/^[^@:]*@\\([^:]*\\):\/https:\\\/\\\/\\1\\\/\/; s\/.git$\/\/; '"
-    let origin = system(cdDir . "git config --get remote.origin.url" . " | " . sed_cmd)
+    let origin = system(cdDir . "git config --get remote.origin.url")
 
     " Get Directory & File Names
     let fullPath = resolve(expand("%:p"))
@@ -89,13 +76,20 @@ func! s:gh_line(action) range
     " Set Line Number/s; Form URL With Line Range
     if s:Github(origin)
       let lineRange = s:GithubLineLange(a:firstline, a:lastline, lineNum)
-      let url = origin . action . commit . relative . '#' . lineRange
+      let url = s:GithubUrl(origin) . action . commit . relative . '#' . lineRange
     elseif s:Bitbucket(origin)
       let lineRange = s:BitbucketLineRange(a:firstline, a:lastline, lineNum)
       let url = s:BitBucketUrl(origin) . action . commit . relative . '#' . lineRange
-    elseif s:Gitlab(origin)
+    elseif s:GitLab(origin)
       let lineRange = s:GitLabLineRange(a:firstline, a:lastline, lineNum)
       let url = s:GitLabUrl(origin) . action . commit . relative . '#' . lineRange
+    elseif s:Cgit(origin)
+      let lineRange = s:CgitLineRange(a:firstline, a:lastline, lineNum)
+      let l:commitStr = ''
+      if g:gh_use_canonical > 0
+          let l:commitStr = '?id=' . commit
+      endif
+      let url = s:CgitUrl(origin) . action . relative . l:commitStr . '#' . lineRange
     endif
 
     let l:finalCmd = g:gh_open_command . url
@@ -107,16 +101,25 @@ endfun
 
 func! s:Action(origin, action)
   if a:action == 'blame'
-    if s:Bitbucket(a:origin)
-      return '/annotate/'
-    else
+    if s:Github(a:origin)
       return '/blame/'
+    elseif s:Bitbucket(a:origin)
+      return '/annotate/'
+    elseif s:GitLab(a:origin)
+      return '/blame/'
+    elseif s:Cgit(a:origin)
+      " TODO: Most Cgit frontends do not support blame functionality
+      return '/blame'
     endif
   elseif a:action == 'blob'
-    if s:Bitbucket(a:origin)
-      return '/src/'
-    else
+    if s:Github(a:origin)
       return '/blob/'
+    elseif s:Bitbucket(a:origin)
+      return '/src/'
+    elseif s:GitLab(a:origin)
+      return '/blob/'
+    elseif s:Cgit(a:origin)
+      return '/tree'
     endif
   endif
 endfunc
@@ -130,15 +133,32 @@ func! s:Commit(cdDir)
 endfunc
 
 func! s:Github(origin)
-  return exists('g:gh_github_domain') && match(a:origin, g:gh_github_domain) || match(a:origin, 'github') >= 0
+  return exists('g:gh_github_domain') && match(a:origin, g:gh_github_domain) >= 0 || match(a:origin, 'github') >= 0
 endfunc
 
 func! s:Bitbucket(origin)
   return match(a:origin, 'bitbucket.org') >= 0
 endfunc
 
-func! s:Gitlab(origin)
-  return exists('g:gh_gitlab_domain') && match(a:origin, g:gh_gitlab_domain) || match(a:origin, 'gitlab') >= 0
+func! s:GitLab(origin)
+  return exists('g:gh_gitlab_domain') && match(a:origin, g:gh_gitlab_domain) >= 0 || match(a:origin, 'gitlab') >= 0
+endfunc
+
+func! s:Cgit(origin)
+  " Cgit returns true if origin is hosted on a Cgit frontend.
+  " There is no one major site for hosting repositories in cgit , like in github.com.
+  " Instead, cgit frontend is used by various open source communities with
+  " different organization names. We iterate over the
+  " g:gh_cgit_url_pattern_sub variable the user has provided.
+
+    for pair in g:gh_cgit_url_pattern_sub
+      let l:pattern = pair[0]
+      if a:origin =~ l:pattern
+          return 1
+      endif
+    endfor
+
+    return 0
 endfunc
 
 func! s:GithubLineLange(firstLine, lastLine, lineNum)
@@ -165,20 +185,100 @@ func! s:GitLabLineRange(firstLine, lastLine, lineNum)
   endif
 endfunc
 
+func! s:CgitLineRange(firstLine, lastLine, lineNum)
+    " TODO: Does cgit gui support line number ranges ? Until we figure out
+    " ignore the lastLine
+    return 'n' . a:lineNum
+endfunc
+
 func! s:StripNL(l)
   return substitute(a:l, '\n$', '', '')
 endfun
 
+func! s:StripSuffix(input,fix)
+  return substitute(a:input, a:fix . '$' , '', '')
+endfun
+
+func! s:StripPrefix(input,fix)
+  return substitute(a:input, '^' . a:fix , '', '')
+endfun
+
+func! s:TransformSSHToHTTPS(input)
+    " If the remote is using ssh protocol, we need to turn a git remote like this:
+    " `git@github.com:<suffix>`
+    " To a url like this:
+    " `https://github.com/<suffix>`
+    let l:rv = a:input
+    let l:sed_cmd = "sed 's\/^[^@:]*@\\([^:]*\\):\/https:\\\/\\\/\\1\\\/\/;'"
+    let l:rv = system("echo " . l:rv . " | " . l:sed_cmd)
+    return l:rv
+endfun
+
+func! s:GithubUrl(origin)
+  let l:rv = s:TransformSSHToHTTPS(a:origin)
+  let l:rv = s:StripNL(l:rv)
+  let l:rv = s:StripSuffix(l:rv, '.git')
+  return l:rv
+endfunc
+
 func! s:BitBucketUrl(origin)
-  return substitute(a:origin, '\(:\/\/\)\@<=.*@', '', '')
+  let l:rv = s:TransformSSHToHTTPS(a:origin)
+  let l:rv = s:StripNL(l:rv)
+  let l:rv = s:StripSuffix(l:rv, '.git')
+  " TODO: What does the following line do ?
+  let l:rv = substitute(l:rv, '\(:\/\/\)\@<=.*@', '', '')
+  return l:rv
 endfunc
 
 func! s:GitLabUrl(origin)
-  let l:origin = a:origin
+  let l:rv = s:TransformSSHToHTTPS(a:origin)
+  let l:rv = s:StripNL(l:rv)
+  let l:rv = s:StripSuffix(l:rv, '.git')
   if g:gh_gitlab_only_http
-    let l:origin = substitute(l:origin, 'https://', 'http://', '')
+    let l:rv= substitute(l:rv, 'https://', 'http://', '')
   endif
-  return l:origin
+  return l:rv
+endfunc
+
+func! s:CgitUrl(origin)
+    " Cgit urls do not follow a regular consistent standard. For example the
+    " following are all valid Cgit urls:
+    "
+    " (1) https://repo.or.cz/clang.git/...
+    " (2) http://git.savannah.gnu.org/cgit/bash.git/...
+    " (3) https://git.zx2c4.com/linux-dev/...
+    " (4) https://git.yoctoproject.org/cgit.cgi/meta-intel/...
+    "
+    " Some of them have kept the .git extension in the url path (1),(2), some of them
+    " have a novel string as the first path component ( ..org/CGIT/bash..(2) or
+    " org/CGIT.CGI/meta (4) ), and some lack both (3). With these existing
+    " variations, there is no simple heuristic to return the url for a cgit
+    " remote.
+    "
+    " In addition to non-uniformity in the cgit front-end url, the remote
+    " names also do not follow an obvious pattern. For example for GNU Bash,
+    " (hosted on cgit) one of the following can be a remote:
+    "
+    " (A) git://git.savannah.gnu.org/bash.git
+    " (B) https://git.savannah.gnu.org/git/bash.git
+    " (C) ssh://git.savannah.gnu.org:/srv/git/bash.git
+    "
+    " The https based remote has `git` as the first path component (B), similarly,
+    " the ssh based remote has `srv` (C). We do not have a heuristic to
+    " compile the url by just looking at the remote. So we ask the user to
+    " provide a mapping via g:gh_cgit_url_pattern_sub variable.
+
+    for pair in g:gh_cgit_url_pattern_sub
+      let l:pattern = pair[0]
+      let l:sub= pair[1]
+      if a:origin =~ l:pattern
+          return substitute(a:origin, l:pattern, l:sub, '')
+      endif
+    endfor
+
+    " No specified pattern has matched the passed origin
+    throw 'Could not match origin: ' . a:origin . ' with any of the patterns in ' .
+                \ 'g:gh_cgit_url_pattern_sub:' . string(g:gh_cgit_url_pattern_sub)
 endfunc
 
 noremap <silent> <Plug>(gh-line) :call <SID>gh_line('blob')<CR>
