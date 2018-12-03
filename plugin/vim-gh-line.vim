@@ -90,6 +90,10 @@ func! s:gh_line(action) range
           let l:commitStr = '?id=' . commit
       endif
       let url = s:CgitUrl(origin) . action . relative . l:commitStr . '#' . lineRange
+    else
+        throw 'The remote: ' . origin . 'has not been recognized as belonging to ' .
+            \ 'one of the supported git hosing environments: ' .
+            \ 'GitHub, GitLab, BitBucket, Cgit.'
     endif
 
     let l:finalCmd = g:gh_open_command . url

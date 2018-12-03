@@ -5,6 +5,29 @@ endif
 let g:loaded_vim_gt_line_test = 1
 
 
+" testUnrecognizedRemoteErrors verifies that a reasonable error is generated
+" if the remote cannot be recognized belonging to a known git hosting
+" environment. GitHub, GitLab ....
+func! s:testUnrecognizedRemoteErrors(sid)
+    call s:persistedPrint('Calling testUnrecognizedRemoteErrors')
+
+    let l:initialRemote = system('git config --get remote.origin.url')
+    let l:unrecognizableRemote = 'someStringThatCannotBeRemote'
+
+    call system('git config remote.origin.url ' . l:unrecognizableRemote)
+
+    try
+        call s:callWithSID(a:sid, 'gh_line', 'blob')
+        assert_report('gh_line did not throw an expected exception')
+    catch
+        call assert_exception(l:unrecognizableRemote)
+        call assert_exception('has not been recognized as belonging to ' ,
+            \ 'one of the supported git hosing environments: ')
+    endtry
+
+    call system('git config remote.origin.url ' . l:initialRemote)
+endfunction
+
 func! s:testGithub(sid)
     call s:persistedPrint('Calling testGithub')
 
@@ -220,6 +243,8 @@ func! s:runAllTests()
 
 
     " Add all test functions here.
+    call s:testUnrecognizedRemoteErrors(l:scriptID)
+
     call s:testGithub(l:scriptID)
     call s:testAction(l:scriptID)
     call s:testCommit(l:scriptID)
