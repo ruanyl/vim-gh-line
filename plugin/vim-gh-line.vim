@@ -48,14 +48,27 @@ if !exists('g:gh_cgit_url_pattern_sub')
     let g:gh_cgit_url_pattern_sub = []
 endif
 
-func! s:gh_line(action) range
+if !exists('g:git_remote')
+    let g:git_remote = ""
+endif
+
+func! s:gh_line(action, force_interactive) range
     " Get Line Number/s
     let lineNum = line('.')
     let fileName = resolve(expand('%:t'))
     let fileDir = resolve(expand("%:p:h"))
     let cdDir = "cd '" . fileDir . "'; "
 
-    let origin = system(cdDir . "git config --get remote.origin.url")
+    " try to find git remote
+    if a:force_interactive == 1 || g:git_remote == ""
+      let g:git_remote = s:find_git_remote(cdDir)
+    endif
+
+    if g:git_remote == ""
+      echom "vim-gh-line CAN NOT find git remote"
+      return
+    endif
+    let origin = system(cdDir . "git config --get remote." . g:git_remote . ".url")
 
     " Get Directory & File Names
     let fullPath = resolve(expand("%:p"))
@@ -102,6 +115,27 @@ func! s:gh_line(action) range
     endif
     call system(l:finalCmd)
 endfun
+
+func! s:find_git_remote(cdDir)
+  let l:remotes = system(a:cdDir . "git remote")
+  let l:remote_list = split(l:remotes, '\n')
+  let l:remote = ""
+
+  if len(l:remote_list) > 1
+    call inputsave()
+    let l:remote = input('Please select one remote(' . join(l:remote_list, ',') . '): ')
+    call inputrestore()
+
+    if index(l:remote_list, l:remote) < 0
+      echom " <- seems it is not a valid remote name"
+      let l:remote = ""
+    endif
+  elseif len(l:remote_list) == 1
+    let l:remote = l:remote_list[0]
+  endif
+
+  return l:remote
+endfunc
 
 func! s:Action(origin, action)
   if a:action == 'blame'
@@ -285,8 +319,11 @@ func! s:CgitUrl(origin)
                 \ 'g:gh_cgit_url_pattern_sub:' . string(g:gh_cgit_url_pattern_sub)
 endfunc
 
-noremap <silent> <Plug>(gh-line) :call <SID>gh_line('blob')<CR>
-noremap <silent> <Plug>(gh-line-blame) :call <SID>gh_line('blame')<CR>
+noremap <silent> <Plug>(gh-line) :call <SID>gh_line('blob', 0)<CR>
+noremap <silent> <Plug>(gh-line-blame) :call <SID>gh_line('blame', 0)<CR>
+
+command! GHIteractive call <SID>gh_line('blob', 1)
+command! GBIteractive call <SID>gh_line('blame', 1)
 
 if !hasmapto('<Plug>(gh-line)') && exists('g:gh_line_map')
     exe "map" g:gh_line_map "<Plug>(gh-line)"
