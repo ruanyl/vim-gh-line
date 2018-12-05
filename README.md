@@ -64,6 +64,13 @@ But you can use the following command to enforce to show the interactive input a
 :GBIteractive
 ```
 
+it is also possible to always enforce interactive input by setting:
+
+```
+" gh_always_interactive is 0 by default
+g:gh_always_interactive = 1
+```
+
 ### Different git hosting alternatives
 
 #### Use self-deployed GitHub:

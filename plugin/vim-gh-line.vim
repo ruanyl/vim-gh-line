@@ -52,6 +52,10 @@ if !exists('g:gh_git_remote')
     let g:gh_git_remote = ""
 endif
 
+if !exists('g:gh_always_interactive')
+    let g:gh_always_interactive = 0
+endif
+
 func! s:gh_line(action, force_interactive) range
     " Get Line Number/s
     let lineNum = line('.')
@@ -327,10 +331,10 @@ func! s:CgitUrl(remote_url)
                 \ 'g:gh_cgit_url_pattern_sub:' . string(g:gh_cgit_url_pattern_sub)
 endfunc
 
-command! GH call <SID>gh_line('blob', 0)
+command! GH call <SID>gh_line('blob', g:gh_always_interactive)
 noremap <silent> <Plug>(gh-line) :GH<CR>
 
-command! GB call <SID>gh_line('blame', 0)
+command! GB call <SID>gh_line('blame', g:gh_always_interactive)
 noremap <silent> <Plug>(gh-line-blame) :GB<CR>
 
 command! GHIteractive call <SID>gh_line('blob', 1)
