@@ -13,11 +13,12 @@ func! s:testUnrecognizedRemoteErrors(sid)
 
     let l:initialRemote = system('git config --get remote.origin.url')
     let l:unrecognizableRemote = 'someStringThatCannotBeRemote'
+    let g:git_remote = 'origin'
 
     call system('git config remote.origin.url ' . l:unrecognizableRemote)
 
     try
-        call s:callWithSID(a:sid, 'gh_line', 'blob')
+        call s:callWithSID(a:sid, 'gh_line', 'blob', 0)
         assert_report('gh_line did not throw an expected exception')
     catch
         call assert_exception(l:unrecognizableRemote)
