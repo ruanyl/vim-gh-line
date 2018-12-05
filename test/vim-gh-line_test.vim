@@ -217,7 +217,7 @@ func! s:testGhCgitUrlPatternSubUsageErrors(sid)
                 call s:callWithSID(a:sid, 'CgitUrl', l:currRemote)
                 assert_report('CgitUrl did not throw an expected exception')
             catch
-                call assert_exception('Could not match origin',
+                call assert_exception('Could not match remote url',
                     \ 'CgitUrl did not throw the expected exception')
             endtry
 

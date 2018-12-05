@@ -53,6 +53,17 @@ Use [canonical version hash](https://help.github.com/articles/getting-permanent-
 let g:gh_use_canonical = 1
 ```
 
+### Working with multiple remotes
+When work with repo which has multiple remotes, the plugin will ask for your input of which remote you want to use.
+The plugin always remember the last remote selection and use it as default remote name the next time you use it.
+
+But you can use the following command to enforce to show the interactive input and change the default remote that's set previously:
+
+```
+:GHIteractive
+:GBIteractive
+```
+
 ### Different git hosting alternatives
 
 #### Use self-deployed GitHub:
