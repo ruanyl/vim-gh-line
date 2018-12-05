@@ -29,6 +29,18 @@ func! s:testUnrecognizedRemoteErrors(sid)
     call system('git config remote.origin.url ' . l:initialRemote)
 endfunction
 
+func! s:testFindGitRemote(sid)
+    call s:persistedPrint('Calling testFindGitRemote')
+
+    let l:remote_list = ['origin']
+    let l:expected_remote = 'origin'
+    let l:remote = s:callWithSID(a:sid, 'find_git_remote', l:remote_list)
+
+    call assert_equal(l:expected_remote, l:remote,
+        \ 'it should return the remote directly if there is only one remote')
+    " TODO: test interactive input?
+endfunction
+
 func! s:testGithub(sid)
     call s:persistedPrint('Calling testGithub')
 
@@ -256,6 +268,7 @@ func! s:runAllTests()
 
     call s:testGhCgitUrlPatternSubUsage(l:scriptID)
     call s:testGhCgitUrlPatternSubUsageErrors(l:scriptID)
+    call s:testFindGitRemote(l:scriptID)
 
 endfunction
 
