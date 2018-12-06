@@ -13,11 +13,12 @@ func! s:testUnrecognizedRemoteErrors(sid)
 
     let l:initialRemote = system('git config --get remote.origin.url')
     let l:unrecognizableRemote = 'someStringThatCannotBeRemote'
+    let g:git_remote = 'origin'
 
     call system('git config remote.origin.url ' . l:unrecognizableRemote)
 
     try
-        call s:callWithSID(a:sid, 'gh_line', 'blob')
+        call s:callWithSID(a:sid, 'gh_line', 'blob', 0)
         assert_report('gh_line did not throw an expected exception')
     catch
         call assert_exception(l:unrecognizableRemote)
@@ -26,6 +27,18 @@ func! s:testUnrecognizedRemoteErrors(sid)
     endtry
 
     call system('git config remote.origin.url ' . l:initialRemote)
+endfunction
+
+func! s:testFindGitRemote(sid)
+    call s:persistedPrint('Calling testFindGitRemote')
+
+    let l:remote_list = ['origin']
+    let l:expected_remote = 'origin'
+    let l:remote = s:callWithSID(a:sid, 'find_git_remote', l:remote_list)
+
+    call assert_equal(l:expected_remote, l:remote,
+        \ 'it should return the remote directly if there is only one remote')
+    " TODO: test interactive input?
 endfunction
 
 func! s:testGithub(sid)
@@ -216,7 +229,7 @@ func! s:testGhCgitUrlPatternSubUsageErrors(sid)
                 call s:callWithSID(a:sid, 'CgitUrl', l:currRemote)
                 assert_report('CgitUrl did not throw an expected exception')
             catch
-                call assert_exception('Could not match origin',
+                call assert_exception('Could not match remote url',
                     \ 'CgitUrl did not throw the expected exception')
             endtry
 
@@ -255,6 +268,7 @@ func! s:runAllTests()
 
     call s:testGhCgitUrlPatternSubUsage(l:scriptID)
     call s:testGhCgitUrlPatternSubUsageErrors(l:scriptID)
+    call s:testFindGitRemote(l:scriptID)
 
 endfunction
 

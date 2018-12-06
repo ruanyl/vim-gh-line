@@ -48,14 +48,41 @@ if !exists('g:gh_cgit_url_pattern_sub')
     let g:gh_cgit_url_pattern_sub = []
 endif
 
-func! s:gh_line(action) range
+if !exists('g:gh_git_remote')
+    let g:gh_git_remote = ""
+endif
+
+if !exists('g:gh_always_interactive')
+    let g:gh_always_interactive = 0
+endif
+
+func! s:gh_line(action, force_interactive) range
     " Get Line Number/s
     let lineNum = line('.')
     let fileName = resolve(expand('%:t'))
     let fileDir = resolve(expand("%:p:h"))
     let cdDir = "cd '" . fileDir . "'; "
 
-    let origin = system(cdDir . "git config --get remote.origin.url")
+    let l:remotes = system(cdDir . "git remote")
+    let l:remote_list = split(l:remotes, '\n')
+    if len(l:remote_list) == 0
+      echom "It seems the repo does not have any remote"
+      return
+    endif
+
+    " try to find git remote:
+    " if force interactive input, or g:gh_git_remote is not set, or
+    " g:gh_git_remote is not the remote of current file, try to find git
+    " remote name again
+    if a:force_interactive == 1 || g:gh_git_remote == "" || index(l:remote_list, g:gh_git_remote) < 0
+      let g:gh_git_remote = s:find_git_remote(l:remote_list)
+    endif
+
+    if g:gh_git_remote == ""
+      return
+    endif
+
+    let remote_url = system(cdDir . "git config --get remote." . g:gh_git_remote . ".url")
 
     " Get Directory & File Names
     let fullPath = resolve(expand("%:p"))
@@ -64,34 +91,34 @@ func! s:gh_line(action) range
     let gitRoot = system(cdDir . "git rev-parse --show-toplevel")
 
     " Strip Newlines
-    let origin = <SID>StripNL(origin)
+    let remote_url = <SID>StripNL(remote_url)
     let commit = <SID>StripNL(commit)
     let gitRoot = <SID>StripNL(gitRoot)
     let fullPath = <SID>StripNL(fullPath)
-    let action = s:Action(origin, a:action)
+    let action = s:Action(remote_url, a:action)
 
     " Git Relative Path
     let relative = split(fullPath, gitRoot)[-1]
 
     " Set Line Number/s; Form URL With Line Range
-    if s:Github(origin)
+    if s:Github(remote_url)
       let lineRange = s:GithubLineLange(a:firstline, a:lastline, lineNum)
-      let url = s:GithubUrl(origin) . action . commit . relative . '#' . lineRange
-    elseif s:Bitbucket(origin)
+      let url = s:GithubUrl(remote_url) . action . commit . relative . '#' . lineRange
+    elseif s:Bitbucket(remote_url)
       let lineRange = s:BitbucketLineRange(a:firstline, a:lastline, lineNum)
-      let url = s:BitBucketUrl(origin) . action . commit . relative . '#' . lineRange
-    elseif s:GitLab(origin)
+      let url = s:BitBucketUrl(remote_url) . action . commit . relative . '#' . lineRange
+    elseif s:GitLab(remote_url)
       let lineRange = s:GitLabLineRange(a:firstline, a:lastline, lineNum)
-      let url = s:GitLabUrl(origin) . action . commit . relative . '#' . lineRange
-    elseif s:Cgit(origin)
+      let url = s:GitLabUrl(remote_url) . action . commit . relative . '#' . lineRange
+    elseif s:Cgit(remote_url)
       let lineRange = s:CgitLineRange(a:firstline, a:lastline, lineNum)
       let l:commitStr = ''
       if g:gh_use_canonical > 0
           let l:commitStr = '?id=' . commit
       endif
-      let url = s:CgitUrl(origin) . action . relative . l:commitStr . '#' . lineRange
+      let url = s:CgitUrl(remote_url) . action . relative . l:commitStr . '#' . lineRange
     else
-        throw 'The remote: ' . origin . 'has not been recognized as belonging to ' .
+        throw 'The remote: ' . remote_url . 'has not been recognized as belonging to ' .
             \ 'one of the supported git hosing environments: ' .
             \ 'GitHub, GitLab, BitBucket, Cgit.'
     endif
@@ -103,26 +130,45 @@ func! s:gh_line(action) range
     call system(l:finalCmd)
 endfun
 
-func! s:Action(origin, action)
+func! s:find_git_remote(remote_list)
+  let l:remote = ""
+
+  if len(a:remote_list) > 1
+    call inputsave()
+    let l:remote = input('Please select one remote(' . join(a:remote_list, ',') . '): ')
+    call inputrestore()
+
+    if index(a:remote_list, l:remote) < 0
+      echom " <- seems it is not a valid remote name"
+      let l:remote = ""
+    endif
+  elseif len(a:remote_list) == 1
+    let l:remote = a:remote_list[0]
+  endif
+
+  return l:remote
+endfunc
+
+func! s:Action(remote_url, action)
   if a:action == 'blame'
-    if s:Github(a:origin)
+    if s:Github(a:remote_url)
       return '/blame/'
-    elseif s:Bitbucket(a:origin)
+    elseif s:Bitbucket(a:remote_url)
       return '/annotate/'
-    elseif s:GitLab(a:origin)
+    elseif s:GitLab(a:remote_url)
       return '/blame/'
-    elseif s:Cgit(a:origin)
+    elseif s:Cgit(a:remote_url)
       " TODO: Most Cgit frontends do not support blame functionality
       return '/blame'
     endif
   elseif a:action == 'blob'
-    if s:Github(a:origin)
+    if s:Github(a:remote_url)
       return '/blob/'
-    elseif s:Bitbucket(a:origin)
+    elseif s:Bitbucket(a:remote_url)
       return '/src/'
-    elseif s:GitLab(a:origin)
+    elseif s:GitLab(a:remote_url)
       return '/blob/'
-    elseif s:Cgit(a:origin)
+    elseif s:Cgit(a:remote_url)
       return '/tree'
     endif
   endif
@@ -136,20 +182,20 @@ func! s:Commit(cdDir)
   endif
 endfunc
 
-func! s:Github(origin)
-  return exists('g:gh_github_domain') && match(a:origin, g:gh_github_domain) >= 0 || match(a:origin, 'github') >= 0
+func! s:Github(remote_url)
+  return exists('g:gh_github_domain') && match(a:remote_url, g:gh_github_domain) >= 0 || match(a:remote_url, 'github') >= 0
 endfunc
 
-func! s:Bitbucket(origin)
-  return match(a:origin, 'bitbucket.org') >= 0
+func! s:Bitbucket(remote_url)
+  return match(a:remote_url, 'bitbucket.org') >= 0
 endfunc
 
-func! s:GitLab(origin)
-  return exists('g:gh_gitlab_domain') && match(a:origin, g:gh_gitlab_domain) >= 0 || match(a:origin, 'gitlab') >= 0
+func! s:GitLab(remote_url)
+  return exists('g:gh_gitlab_domain') && match(a:remote_url, g:gh_gitlab_domain) >= 0 || match(a:remote_url, 'gitlab') >= 0
 endfunc
 
-func! s:Cgit(origin)
-  " Cgit returns true if origin is hosted on a Cgit frontend.
+func! s:Cgit(remote_url)
+  " Cgit returns true if remote_url is hosted on a Cgit frontend.
   " There is no one major site for hosting repositories in cgit , like in github.com.
   " Instead, cgit frontend is used by various open source communities with
   " different organization names. We iterate over the
@@ -157,7 +203,7 @@ func! s:Cgit(origin)
 
     for pair in g:gh_cgit_url_pattern_sub
       let l:pattern = pair[0]
-      if a:origin =~ l:pattern
+      if a:remote_url =~ l:pattern
           return 1
       endif
     endfor
@@ -218,15 +264,15 @@ func! s:TransformSSHToHTTPS(input)
     return l:rv
 endfun
 
-func! s:GithubUrl(origin)
-  let l:rv = s:TransformSSHToHTTPS(a:origin)
+func! s:GithubUrl(remote_url)
+  let l:rv = s:TransformSSHToHTTPS(a:remote_url)
   let l:rv = s:StripNL(l:rv)
   let l:rv = s:StripSuffix(l:rv, '.git')
   return l:rv
 endfunc
 
-func! s:BitBucketUrl(origin)
-  let l:rv = s:TransformSSHToHTTPS(a:origin)
+func! s:BitBucketUrl(remote_url)
+  let l:rv = s:TransformSSHToHTTPS(a:remote_url)
   let l:rv = s:StripNL(l:rv)
   let l:rv = s:StripSuffix(l:rv, '.git')
   " TODO: What does the following line do ?
@@ -234,8 +280,8 @@ func! s:BitBucketUrl(origin)
   return l:rv
 endfunc
 
-func! s:GitLabUrl(origin)
-  let l:rv = s:TransformSSHToHTTPS(a:origin)
+func! s:GitLabUrl(remote_url)
+  let l:rv = s:TransformSSHToHTTPS(a:remote_url)
   let l:rv = s:StripNL(l:rv)
   let l:rv = s:StripSuffix(l:rv, '.git')
   if g:gh_gitlab_only_http
@@ -244,7 +290,7 @@ func! s:GitLabUrl(origin)
   return l:rv
 endfunc
 
-func! s:CgitUrl(origin)
+func! s:CgitUrl(remote_url)
     " Cgit urls do not follow a regular consistent standard. For example the
     " following are all valid Cgit urls:
     "
@@ -275,18 +321,24 @@ func! s:CgitUrl(origin)
     for pair in g:gh_cgit_url_pattern_sub
       let l:pattern = pair[0]
       let l:sub= pair[1]
-      if a:origin =~ l:pattern
-          return substitute(a:origin, l:pattern, l:sub, '')
+      if a:remote_url =~ l:pattern
+          return substitute(a:remote_url, l:pattern, l:sub, '')
       endif
     endfor
 
-    " No specified pattern has matched the passed origin
-    throw 'Could not match origin: ' . a:origin . ' with any of the patterns in ' .
+    " No specified pattern has matched the passed remote_url
+    throw 'Could not match remote url: ' . a:remote_url . ' with any of the patterns in ' .
                 \ 'g:gh_cgit_url_pattern_sub:' . string(g:gh_cgit_url_pattern_sub)
 endfunc
 
-noremap <silent> <Plug>(gh-line) :call <SID>gh_line('blob')<CR>
-noremap <silent> <Plug>(gh-line-blame) :call <SID>gh_line('blame')<CR>
+command! GH call <SID>gh_line('blob', g:gh_always_interactive)
+noremap <silent> <Plug>(gh-line) :GH<CR>
+
+command! GB call <SID>gh_line('blame', g:gh_always_interactive)
+noremap <silent> <Plug>(gh-line-blame) :GB<CR>
+
+command! GHIteractive call <SID>gh_line('blob', 1)
+command! GBIteractive call <SID>gh_line('blame', 1)
 
 if !hasmapto('<Plug>(gh-line)') && exists('g:gh_line_map')
     exe "map" g:gh_line_map "<Plug>(gh-line)"
