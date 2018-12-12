@@ -332,10 +332,10 @@ func! s:CgitUrl(remote_url)
 endfunc
 
 command! GH call <SID>gh_line('blob', g:gh_always_interactive)
-noremap <silent> <Plug>(gh-line) :GH<CR>
+noremap <silent> <Plug>(gh-line) :call <SID>gh_line('blob', g:gh_always_interactive)<CR>
 
 command! GB call <SID>gh_line('blame', g:gh_always_interactive)
-noremap <silent> <Plug>(gh-line-blame) :GB<CR>
+noremap <silent> <Plug>(gh-line-blame) :call <SID>gh_line('blame', g:gh_always_interactive)<CR>
 
 command! GHIteractive call <SID>gh_line('blob', 1)
 command! GBIteractive call <SID>gh_line('blame', 1)
