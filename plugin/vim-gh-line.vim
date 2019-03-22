@@ -256,10 +256,12 @@ endfun
 func! s:TransformSSHToHTTPS(input)
     " If the remote is using ssh protocol, we need to turn a git remote like this:
     " `git@github.com:<suffix>`
+    " or
+    " `ssh://git@github.com/<suffix>`
     " To a url like this:
     " `https://github.com/<suffix>`
     let l:rv = a:input
-    let l:sed_cmd = "sed 's\/^[^@:]*@\\([^:]*\\):\/https:\\\/\\\/\\1\\\/\/;'"
+    let l:sed_cmd = "sed 's\/^[^@]*@\\([^:\\\/]*\\)[:\\\/]\/https:\\\/\\\/\\1\\\/\/;'"
     let l:rv = system("echo " . l:rv . " | " . l:sed_cmd)
     return l:rv
 endfun
