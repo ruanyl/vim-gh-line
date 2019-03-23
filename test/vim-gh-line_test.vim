@@ -109,7 +109,12 @@ func! s:testGithubUrl(sid)
     let l:act = s:callWithSID(a:sid, 'GithubUrl',
         \ 'git@github.com:ruanyl/vim-gh-line.git')
     call assert_equal('https://github.com/ruanyl/vim-gh-line', l:act,
-        \ 'GithubUrl unexpected result with ssh protocol')
+        \ 'GithubUrl unexpected result with ssh protocol (scp style)')
+
+    let l:act = s:callWithSID(a:sid, 'GithubUrl',
+        \ 'ssh://git@github.com/ruanyl/vim-gh-line.git')
+    call assert_equal('https://github.com/ruanyl/vim-gh-line', l:act,
+        \ 'GithubUrl unexpected result with ssh protocol (ssh:// style)')
 endfunction
 
 func! s:testBitBucketUrl(sid)
