@@ -333,14 +333,14 @@ func! s:CgitUrl(remote_url)
                 \ 'g:gh_cgit_url_pattern_sub:' . string(g:gh_cgit_url_pattern_sub)
 endfunc
 
-command! GH call <SID>gh_line('blob', g:gh_always_interactive)
+command! -range GH <line1>,<line2>call <SID>gh_line('blob', g:gh_always_interactive)
 noremap <silent> <Plug>(gh-line) :call <SID>gh_line('blob', g:gh_always_interactive)<CR>
 
-command! GB call <SID>gh_line('blame', g:gh_always_interactive)
+command! -range GB <line1>,<line2>call <SID>gh_line('blame', g:gh_always_interactive)
 noremap <silent> <Plug>(gh-line-blame) :call <SID>gh_line('blame', g:gh_always_interactive)<CR>
 
-command! GHIteractive call <SID>gh_line('blob', 1)
-command! GBIteractive call <SID>gh_line('blame', 1)
+command! -range GHIteractive <line1>,<line2>call <SID>gh_line('blob', 1)
+command! -range GBIteractive <line1>,<line2>call <SID>gh_line('blame', 1)
 
 if !hasmapto('<Plug>(gh-line)') && exists('g:gh_line_map')
     exe "map" g:gh_line_map "<Plug>(gh-line)"
