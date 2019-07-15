@@ -25,7 +25,13 @@ if !exists('g:gh_line_blame_map_default')
 endif
 
 if !exists('g:gh_open_command')
-    let g:gh_open_command = 'open '
+    if has('win16') || has('win32') || has('win64')
+        let g:gh_open_command = 'start '
+    elseif has('mac') || has('macunix') || has('gui_macvim')
+        let g:gh_open_command = 'open '
+    elseif executable('xdg-open')
+        let g:gh_open_command = 'xdg-open '
+    endif
 endif
 
 if !exists('g:gh_line_map') && g:gh_line_map_default == 1
