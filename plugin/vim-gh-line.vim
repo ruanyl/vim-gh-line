@@ -34,6 +34,10 @@ if !exists('g:gh_open_command')
     endif
 endif
 
+if !exists('g:gh_repo_map')
+    let g:gh_repo_map = '<leader>go'
+endif
+
 if !exists('g:gh_line_map') && g:gh_line_map_default == 1
     let g:gh_line_map = '<leader>gh'
 endif
@@ -123,6 +127,35 @@ func! s:gh_line(action, force_interactive) range
           let l:commitStr = '?id=' . commit
       endif
       let url = s:CgitUrl(remote_url) . action . relative . l:commitStr . '#' . lineRange
+    else
+        throw 'The remote: ' . remote_url . 'has not been recognized as belonging to ' .
+            \ 'one of the supported git hosing environments: ' .
+            \ 'GitHub, GitLab, BitBucket, Cgit.'
+    endif
+
+    let l:finalCmd = g:gh_open_command . url
+    if g:gh_trace
+        echom "vim-gh-line executing: " . l:finalCmd
+    endif
+    call system(l:finalCmd)
+endfun
+
+func! s:gh_repo()
+    let remote_url = system("git config --get remote.origin.url")
+
+    " Strip Newlines
+    let remote_url = <SID>StripNL(remote_url)
+    echom remote_url
+
+    " Set Line Number/s; Form URL With Line Range
+    if s:Github(remote_url)
+      let url = s:GithubUrl(remote_url)
+    elseif s:Bitbucket(remote_url)
+      let url = s:BitBucketUrl(remote_url)
+    elseif s:GitLab(remote_url)
+      let url = s:GitLabUrl(remote_url)
+    elseif s:Cgit(remote_url)
+      let url = s:CgitUrl(remote_url)
     else
         throw 'The remote: ' . remote_url . 'has not been recognized as belonging to ' .
             \ 'one of the supported git hosing environments: ' .
@@ -339,6 +372,8 @@ func! s:CgitUrl(remote_url)
                 \ 'g:gh_cgit_url_pattern_sub:' . string(g:gh_cgit_url_pattern_sub)
 endfunc
 
+noremap <silent> <Plug>(gh-repo) :call <SID>gh_repo()<CR>
+
 command! -range GH <line1>,<line2>call <SID>gh_line('blob', g:gh_always_interactive)
 noremap <silent> <Plug>(gh-line) :call <SID>gh_line('blob', g:gh_always_interactive)<CR>
 
@@ -347,6 +382,10 @@ noremap <silent> <Plug>(gh-line-blame) :call <SID>gh_line('blame', g:gh_always_i
 
 command! -range GHIteractive <line1>,<line2>call <SID>gh_line('blob', 1)
 command! -range GBIteractive <line1>,<line2>call <SID>gh_line('blame', 1)
+
+if !hasmapto('<Plug>(gh-repo)') && exists('g:gh_repo_map')
+    exe "map" g:gh_repo_map "<Plug>(gh-repo)"
+end
 
 if !hasmapto('<Plug>(gh-line)') && exists('g:gh_line_map')
     exe "map" g:gh_line_map "<Plug>(gh-line)"
