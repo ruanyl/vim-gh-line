@@ -24,6 +24,8 @@ Default key mapping for a blob view: `<leader>gh`
 
 Default key mapping for a blame view: `<leader>gb`
 
+Default key mapping for repo view: `<leader>go`
+
 To disable default key mappings:
 
 ```
