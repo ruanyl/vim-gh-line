@@ -147,7 +147,6 @@ func! s:gh_repo()
     let remote_url = <SID>StripNL(remote_url)
     echom remote_url
 
-    " Set Line Number/s; Form URL With Line Range
     if s:Github(remote_url)
       let url = s:GithubUrl(remote_url)
     elseif s:Bitbucket(remote_url)
