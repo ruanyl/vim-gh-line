@@ -142,6 +142,8 @@ endfun
 
 func! s:gh_repo()
     let remote_url = system("git config --get remote.origin.url")
+    let remote_ref = system("git symbolic-ref -q --short HEAD")
+    let url_path = <SID>StripNL(remote_ref) == "master" ? "" : "/tree/".remote_ref
 
     " Strip Newlines
     let remote_url = <SID>StripNL(remote_url)
@@ -161,7 +163,7 @@ func! s:gh_repo()
             \ 'GitHub, GitLab, BitBucket, Cgit.'
     endif
 
-    let l:finalCmd = g:gh_open_command . url
+    let l:finalCmd = g:gh_open_command . url . url_path
     if g:gh_trace
         echom "vim-gh-line executing: " . l:finalCmd
     endif
