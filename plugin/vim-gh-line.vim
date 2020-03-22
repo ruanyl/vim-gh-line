@@ -319,29 +319,45 @@ func! s:GithubUrl(remote_url, ...)
   let l:rv = s:TransformSSHToHTTPS(a:remote_url)
   let l:rv = s:StripNL(l:rv)
   let l:rv = s:StripSuffix(l:rv, '.git')
+
+  if exists("a:1") && a:1 != ""
+    return l:rv . "/tree/" . s:EscapedRemoteRef(a:1)
+  endif
+
   return l:rv
 endfunc
 
-func! s:BitBucketUrl(remote_url)
+func! s:BitBucketUrl(remote_url, ...)
   let l:rv = s:TransformSSHToHTTPS(a:remote_url)
   let l:rv = s:StripNL(l:rv)
   let l:rv = s:StripSuffix(l:rv, '.git')
   " TODO: What does the following line do ?
   let l:rv = substitute(l:rv, '\(:\/\/\)\@<=.*@', '', '')
+
+  if exists("a:1") && a:1 != ""
+    return l:rv . "/src\\?at\\=" . s:EscapedRemoteRef(a:1)
+  endif
+
   return l:rv
 endfunc
 
-func! s:GitLabUrl(remote_url)
+func! s:GitLabUrl(remote_url, ...)
   let l:rv = s:TransformSSHToHTTPS(a:remote_url)
   let l:rv = s:StripNL(l:rv)
   let l:rv = s:StripSuffix(l:rv, '.git')
+
   if g:gh_gitlab_only_http
-    let l:rv= substitute(l:rv, 'https://', 'http://', '')
+    let l:rv = substitute(l:rv, 'https://', 'http://', '')
   endif
+
+  if exists("a:1") && a:1 != ""
+    return l:rv . "/tree/" . s:EscapedRemoteRef(a:1)
+  endif
+
   return l:rv
 endfunc
 
-func! s:CgitUrl(remote_url)
+func! s:CgitUrl(remote_url, ...)
     " Cgit urls do not follow a regular consistent standard. For example the
     " following are all valid Cgit urls:
     "
