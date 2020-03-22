@@ -142,8 +142,8 @@ func! s:gh_line(action, force_interactive) range
 endfun
 
 func! s:gh_repo()
-    let remote_url = system("git config --get remote.origin.url")
     let url_path = ""
+    let remote_url = system("git config --get remote.origin.url")
     let remote_ref = <SID>StripNL(system("git symbolic-ref -q --short HEAD"))
 
     if remote_ref != "master"
@@ -159,8 +159,12 @@ func! s:gh_repo()
       let url = s:BitBucketUrl(remote_url)
 
       if remote_ref != "master"
-        " TODO commit missing here
-        let url_path = "/src\\?at\\=" . s:EscapedRemoteRef(remote_ref)
+        let fileDir = resolve(expand("%:p:h"))
+        let cdDir = "cd '" . fileDir . "'; "
+        let commit = s:Commit(cdDir)
+        let commit = <SID>StripNL(commit)
+
+        let url_path = "/src/".commit."/\\?at\\=" . s:EscapedRemoteRef(remote_ref)
       endif
     elseif s:GitLab(remote_url)
       let url = s:GitLabUrl(remote_url)
