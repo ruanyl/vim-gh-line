@@ -352,7 +352,7 @@ func! s:GitLabUrl(remote_url)
   return l:rv
 endfunc
 
-func! s:CgitUrl(remote_url, ...)
+func! s:CgitUrl(remote_url)
     " Cgit urls do not follow a regular consistent standard. For example the
     " following are all valid Cgit urls:
     "
