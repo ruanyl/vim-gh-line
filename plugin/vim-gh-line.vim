@@ -27,7 +27,7 @@ endif
 if !exists('g:gh_open_command')
     if has('win16') || has('win32') || has('win64')
         let g:gh_open_command = 'start '
-    elseif has('mac') || has('macunix') || has('gui_macvim')
+    elseif has('mac') || has('macunix') || has('gui_macvim') || executable('open')
         let g:gh_open_command = 'open '
     elseif executable('xdg-open')
         let g:gh_open_command = 'xdg-open '
