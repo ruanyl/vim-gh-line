@@ -142,21 +142,23 @@ endfun
 
 func! s:gh_repo()
     let remote_url = system("git config --get remote.origin.url")
-    let remote_ref = system("git symbolic-ref -q --short HEAD")
-    let url_path = <SID>StripNL(remote_ref) == "master" ? "" : "/tree/".remote_ref
+    let remote_ref = <SID>StripNL(system("git symbolic-ref -q --short HEAD"))
+
+    if remote_ref == "master"
+        let remote_ref = ""
+    endif
 
     " Strip Newlines
     let remote_url = <SID>StripNL(remote_url)
-    echom remote_url
 
     if s:Github(remote_url)
-      let url = s:GithubUrl(remote_url)
+      let url = s:GithubUrl(remote_url, remote_ref)
     elseif s:Bitbucket(remote_url)
-      let url = s:BitBucketUrl(remote_url)
+      let url = s:BitBucketUrl(remote_url, remote_ref)
     elseif s:GitLab(remote_url)
-      let url = s:GitLabUrl(remote_url)
+      let url = s:GitLabUrl(remote_url, remote_ref)
     elseif s:Cgit(remote_url)
-      let url = s:CgitUrl(remote_url)
+      let url = s:CgitUrl(remote_url, remote_ref)
     else
         throw 'The remote: ' . remote_url . 'has not been recognized as belonging to ' .
             \ 'one of the supported git hosing environments: ' .
