@@ -165,7 +165,7 @@ func! s:gh_repo()
             \ 'GitHub, GitLab, BitBucket, Cgit.'
     endif
 
-    let l:finalCmd = g:gh_open_command . url . url_path
+    let l:finalCmd = g:gh_open_command . url
     if g:gh_trace
         echom "vim-gh-line executing: " . l:finalCmd
     endif
