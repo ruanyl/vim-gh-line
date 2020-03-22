@@ -128,7 +128,7 @@ func! s:gh_line(action, force_interactive) range
       endif
       let url = s:CgitUrl(remote_url) . action . relative . l:commitStr . '#' . lineRange
     else
-        throw 'The remote: ' . remote_url . 'has not been recognized as belonging to ' .
+        throw 'The remote: ' . remote_url . ' has not been recognized as belonging to ' .
             \ 'one of the supported git hosing environments: ' .
             \ 'GitHub, GitLab, BitBucket, Cgit.'
     endif
