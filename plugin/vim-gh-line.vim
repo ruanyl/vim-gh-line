@@ -143,30 +143,36 @@ endfun
 
 func! s:gh_repo()
     let remote_url = system("git config --get remote.origin.url")
+    let url_path = ""
     let remote_ref = <SID>StripNL(system("git symbolic-ref -q --short HEAD"))
 
-    if remote_ref == "master"
-        let remote_ref = ""
+    if remote_ref != "master"
+        let url_path = "/tree/" . s:EscapedRemoteRef(remote_ref)
     endif
 
     " Strip Newlines
     let remote_url = <SID>StripNL(remote_url)
 
     if s:Github(remote_url)
-      let url = s:GithubUrl(remote_url, remote_ref)
+      let url = s:GithubUrl(remote_url)
     elseif s:Bitbucket(remote_url)
-      let url = s:BitBucketUrl(remote_url, remote_ref)
+      let url = s:BitBucketUrl(remote_url)
+
+      if remote_ref != "master"
+        " TODO commit missing here
+        let url_path = "/src\\?at\\=" . s:EscapedRemoteRef(remote_ref)
+      endif
     elseif s:GitLab(remote_url)
-      let url = s:GitLabUrl(remote_url, remote_ref)
+      let url = s:GitLabUrl(remote_url)
     elseif s:Cgit(remote_url)
-      let url = s:CgitUrl(remote_url, remote_ref)
+      let url = s:CgitUrl(remote_url)
     else
         throw 'The remote: ' . remote_url . 'has not been recognized as belonging to ' .
             \ 'one of the supported git hosing environments: ' .
             \ 'GitHub, GitLab, BitBucket, Cgit.'
     endif
 
-    let l:finalCmd = g:gh_open_command . url
+    let l:finalCmd = g:gh_open_command . url . url_path
     if g:gh_trace
         echom "vim-gh-line executing: " . l:finalCmd
     endif
