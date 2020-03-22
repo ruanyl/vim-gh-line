@@ -170,6 +170,10 @@ func! s:gh_repo()
       let url = s:GitLabUrl(remote_url)
     elseif s:Cgit(remote_url)
       let url = s:CgitUrl(remote_url)
+
+      if remote_ref != "master"
+        let url_path = "/tree/\\?h\\=" . s:EscapedRemoteRef(remote_ref)
+      endif
     else
         throw 'The remote: ' . remote_url . 'has not been recognized as belonging to ' .
             \ 'one of the supported git hosing environments: ' .
