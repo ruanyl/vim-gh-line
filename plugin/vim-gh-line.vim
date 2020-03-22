@@ -308,7 +308,14 @@ func! s:TransformSSHToHTTPS(input)
     return l:rv
 endfun
 
-func! s:GithubUrl(remote_url)
+func! s:EscapedRemoteRef(remote_ref)
+  " https://github.com/paulirish/git-open/blob/d9a0d19ce291ab09d182e389edaa278bb2febb11/git-open#L183
+  let l:remote_ref = substitute(a:remote_ref, "%", "%25", "g")
+
+  return substitute(l:remote_ref, "#", "%23", "g")
+endfun
+
+func! s:GithubUrl(remote_url, ...)
   let l:rv = s:TransformSSHToHTTPS(a:remote_url)
   let l:rv = s:StripNL(l:rv)
   let l:rv = s:StripSuffix(l:rv, '.git')
