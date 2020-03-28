@@ -158,12 +158,7 @@ func! s:gh_repo()
       let url = s:BitBucketUrl(remote_url)
 
       if remote_ref != "master"
-        let fileDir = resolve(expand("%:p:h"))
-        let cdDir = "cd '" . fileDir . "'; "
-        let commit = s:Commit(cdDir)
-        let commit = <SID>StripNL(commit)
-
-        let url_path = "/src/".commit."/\\?at\\=" . s:EscapedRemoteRef(remote_ref)
+        let url_path = "/src/" . s:EscapedRemoteRef(remote_ref)
       endif
     elseif s:GitLab(remote_url)
       let url = s:GitLabUrl(remote_url)
