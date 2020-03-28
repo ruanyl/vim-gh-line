@@ -128,7 +128,7 @@ func! s:gh_line(action, force_interactive) range
       endif
       let url = s:CgitUrl(remote_url) . action . relative . l:commitStr . '#' . lineRange
     else
-        throw 'The remote: ' . remote_url . 'has not been recognized as belonging to ' .
+        throw 'The remote: ' . remote_url . ' has not been recognized as belonging to ' .
             \ 'one of the supported git hosing environments: ' .
             \ 'GitHub, GitLab, BitBucket, Cgit.'
     endif
@@ -141,27 +141,40 @@ func! s:gh_line(action, force_interactive) range
 endfun
 
 func! s:gh_repo()
+    let url_path = ""
     let remote_url = system("git config --get remote.origin.url")
+    let remote_ref = <SID>StripNL(system("git symbolic-ref -q --short HEAD"))
+
+    if remote_ref != "master"
+        let url_path = "/tree/" . s:EscapedRemoteRef(remote_ref)
+    endif
 
     " Strip Newlines
     let remote_url = <SID>StripNL(remote_url)
-    echom remote_url
 
     if s:Github(remote_url)
       let url = s:GithubUrl(remote_url)
     elseif s:Bitbucket(remote_url)
       let url = s:BitBucketUrl(remote_url)
+
+      if remote_ref != "master"
+        let url_path = "/src/" . s:EscapedRemoteRef(remote_ref)
+      endif
     elseif s:GitLab(remote_url)
       let url = s:GitLabUrl(remote_url)
     elseif s:Cgit(remote_url)
       let url = s:CgitUrl(remote_url)
+
+      if remote_ref != "master"
+        let url_path = "/tree/\\?h\\=" . s:EscapedRemoteRef(remote_ref)
+      endif
     else
         throw 'The remote: ' . remote_url . 'has not been recognized as belonging to ' .
             \ 'one of the supported git hosing environments: ' .
             \ 'GitHub, GitLab, BitBucket, Cgit.'
     endif
 
-    let l:finalCmd = g:gh_open_command . url
+    let l:finalCmd = g:gh_open_command . url . url_path
     if g:gh_trace
         echom "vim-gh-line executing: " . l:finalCmd
     endif
@@ -304,10 +317,18 @@ func! s:TransformSSHToHTTPS(input)
     return l:rv
 endfun
 
+func! s:EscapedRemoteRef(remote_ref)
+  " https://github.com/paulirish/git-open/blob/d9a0d19ce291ab09d182e389edaa278bb2febb11/git-open#L183
+  let l:remote_ref = substitute(a:remote_ref, "%", "%25", "g")
+
+  return substitute(l:remote_ref, "#", "%23", "g")
+endfun
+
 func! s:GithubUrl(remote_url)
   let l:rv = s:TransformSSHToHTTPS(a:remote_url)
   let l:rv = s:StripNL(l:rv)
   let l:rv = s:StripSuffix(l:rv, '.git')
+
   return l:rv
 endfunc
 
@@ -317,6 +338,7 @@ func! s:BitBucketUrl(remote_url)
   let l:rv = s:StripSuffix(l:rv, '.git')
   " TODO: What does the following line do ?
   let l:rv = substitute(l:rv, '\(:\/\/\)\@<=.*@', '', '')
+
   return l:rv
 endfunc
 
@@ -324,9 +346,11 @@ func! s:GitLabUrl(remote_url)
   let l:rv = s:TransformSSHToHTTPS(a:remote_url)
   let l:rv = s:StripNL(l:rv)
   let l:rv = s:StripSuffix(l:rv, '.git')
+
   if g:gh_gitlab_only_http
-    let l:rv= substitute(l:rv, 'https://', 'http://', '')
+    let l:rv = substitute(l:rv, 'https://', 'http://', '')
   endif
+
   return l:rv
 endfunc
 
