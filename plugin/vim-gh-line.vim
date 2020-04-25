@@ -140,7 +140,7 @@ func! s:gh_line(action, force_interactive) range
     call system(l:finalCmd)
 endfun
 
-func! s:gh_repo()
+func! s:gh_repo() range
     let url_path = ""
     let remote_url = system("git config --get remote.origin.url")
     let remote_ref = <SID>StripNL(system("git symbolic-ref -q --short HEAD"))
