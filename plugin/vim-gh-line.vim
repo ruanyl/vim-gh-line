@@ -145,6 +145,10 @@ func! s:gh_repo() range
     let remote_url = system("git config --get remote.origin.url")
     let remote_ref = <SID>StripNL(system("git symbolic-ref -q --short HEAD"))
 
+    if remote_ref == ""
+        let remote_ref = <SID>StripNL(system("git rev-parse HEAD"))
+    endif
+
     if remote_ref != "master"
         let url_path = "/tree/" . s:EscapedRemoteRef(remote_ref)
     endif
