@@ -62,8 +62,8 @@ The plugin always remember the last remote selection and use it as default remot
 But you can use the following command to enforce to show the interactive input and change the default remote that's set previously:
 
 ```
-:GHIteractive
-:GBIteractive
+:GHInteractive
+:GBInteractive
 ```
 
 it is also possible to always enforce interactive input by setting:

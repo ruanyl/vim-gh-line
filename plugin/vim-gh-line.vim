@@ -407,8 +407,8 @@ noremap <silent> <Plug>(gh-line) :call <SID>gh_line('blob', g:gh_always_interact
 command! -range GB <line1>,<line2>call <SID>gh_line('blame', g:gh_always_interactive)
 noremap <silent> <Plug>(gh-line-blame) :call <SID>gh_line('blame', g:gh_always_interactive)<CR>
 
-command! -range GHIteractive <line1>,<line2>call <SID>gh_line('blob', 1)
-command! -range GBIteractive <line1>,<line2>call <SID>gh_line('blame', 1)
+command! -range GHInteractive <line1>,<line2>call <SID>gh_line('blob', 1)
+command! -range GBInteractive <line1>,<line2>call <SID>gh_line('blame', 1)
 
 if !hasmapto('<Plug>(gh-repo)') && exists('g:gh_repo_map')
     exe "map" g:gh_repo_map "<Plug>(gh-repo)"
