@@ -114,6 +114,8 @@ func! s:gh_line(action, force_interactive) range
     if s:Github(remote_url)
       let lineRange = s:GithubLineLange(a:firstline, a:lastline, lineNum)
       let url = s:GithubUrl(remote_url) . action . commit . relative . '#' . lineRange
+    elseif s:GoGoogleSrc(remote_url)
+      let url = s:GoGoogleSrcUrl(remote_url) . '/+/' . commit . relative . '#' . lineNum
     elseif s:Bitbucket(remote_url)
       let lineRange = s:BitbucketLineRange(a:firstline, a:lastline, lineNum)
       let url = s:BitBucketUrl(remote_url) . action . commit . relative . '#' . lineRange
@@ -241,6 +243,10 @@ func! s:Github(remote_url)
   return exists('g:gh_github_domain') && match(a:remote_url, g:gh_github_domain) >= 0 || match(a:remote_url, 'github') >= 0
 endfunc
 
+func! s:GoGoogleSrc(remote_url)
+  return match(a:remote_url, 'googlesource.com') >= 0
+endfunc
+
 func! s:Bitbucket(remote_url)
   return match(a:remote_url, 'bitbucket.org') >= 0
 endfunc
@@ -329,6 +335,14 @@ func! s:EscapedRemoteRef(remote_ref)
 endfun
 
 func! s:GithubUrl(remote_url)
+  let l:rv = s:TransformSSHToHTTPS(a:remote_url)
+  let l:rv = s:StripNL(l:rv)
+  let l:rv = s:StripSuffix(l:rv, '.git')
+
+  return l:rv
+endfunc
+
+func! s:GoGoogleSrcUrl(remote_url)
   let l:rv = s:TransformSSHToHTTPS(a:remote_url)
   let l:rv = s:StripNL(l:rv)
   let l:rv = s:StripSuffix(l:rv, '.git')
