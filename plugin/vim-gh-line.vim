@@ -245,6 +245,7 @@ endfunc
 
 func! s:GoogleSrc(remote_url)
   return match(a:remote_url, 'googlesource.com') >= 0
+endfunc
 
 func! s:Bitbucket(remote_url)
   return match(a:remote_url, 'bitbucket.org') >= 0

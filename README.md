@@ -2,7 +2,7 @@
 
  [![Build Status](https://travis-ci.org/ruanyl/vim-gh-line.svg?branch=master)](https://travis-ci.org/ruanyl/vim-gh-line)
 
-A Vim plugin that opens a link to the current line on GitHub (and also supports Bitbucket and self-deployed GitHub and GitLab).
+A Vim plugin that opens a link to the current line on GitHub (and also supports Bitbucket, self-deployed GitHub, Googlesource and GitLab).
 
 ![gh-line](https://cloud.githubusercontent.com/assets/486382/10865375/142cd426-8012-11e5-92f8-44357b7acf9c.gif)
 
