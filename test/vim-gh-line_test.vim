@@ -93,7 +93,7 @@ func! s:testCommit(sid)
 
     let g:gh_use_canonical = 0
     let l:act = s:callWithSID(a:sid, 'Commit', l:cdDir)
-    call assert_match(l:branch, l:act,
+    call assert_equal(l:branch, l:act,
         \ 'Expected to find branch name in the Commit output ')
     unlet g:gh_use_canonical
 endfunction
