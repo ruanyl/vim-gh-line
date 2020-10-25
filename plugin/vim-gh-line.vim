@@ -144,11 +144,12 @@ endfun
 
 func! s:gh_repo() range
     let url_path = ""
-    let remote_url = system("git config --get remote.origin.url")
-    let remote_ref = <SID>StripNL(system("git symbolic-ref -q --short HEAD"))
+    let cdDir = "cd '" . resolve(expand("%:p:h")) . "'; "
+    let remote_url = system(cdDir . "git config --get remote.origin.url")
+    let remote_ref = <SID>StripNL(system(cdDir . "git symbolic-ref -q --short HEAD"))
 
     if remote_ref == ""
-        let remote_ref = <SID>StripNL(system("git rev-parse HEAD"))
+        let remote_ref = <SID>StripNL(system(cdDir . "git rev-parse HEAD"))
     endif
 
     if remote_ref != "master"
