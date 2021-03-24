@@ -112,7 +112,7 @@ func! s:gh_line(action, force_interactive) range
 
     " Set Line Number/s; Form URL With Line Range
     if s:Github(remote_url)
-      let lineRange = s:GithubLineLange(a:firstline, a:lastline, lineNum)
+      let lineRange = s:GithubLineRange(a:firstline, a:lastline, lineNum)
       let url = s:GithubUrl(remote_url) . action . commit . relative . '#' . lineRange
     elseif s:GoogleSrc(remote_url)
       let url = s:GoogleSrcUrl(remote_url) . '/+/' . commit . relative . '#' . lineNum
@@ -273,7 +273,7 @@ func! s:Cgit(remote_url)
     return 0
 endfunc
 
-func! s:GithubLineLange(firstLine, lastLine, lineNum)
+func! s:GithubLineRange(firstLine, lastLine, lineNum)
   if a:firstLine == a:lastLine
     return 'L' . a:lineNum
   else
