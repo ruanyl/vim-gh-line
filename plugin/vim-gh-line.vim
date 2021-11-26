@@ -176,7 +176,7 @@ func! s:gh_repo() range
         let url_path = "/tree/\\?h\\=" . s:EscapedRemoteRef(remote_ref)
       endif
     else
-        throw 'The remote: ' . remote_url . 'has not been recognized as belonging to ' .
+        throw 'The remote: ' . remote_url . ' has not been recognized as belonging to ' .
             \ 'one of the supported git hosting environments: ' .
             \ 'GitHub, GitLab, BitBucket, Cgit.'
     endif
