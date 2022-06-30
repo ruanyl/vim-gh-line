@@ -66,6 +66,18 @@ if !exists('g:gh_always_interactive')
     let g:gh_always_interactive = 0
 endif
 
+func! s:gh_exec_cmd(url)
+    if get(g:, "gh_open_command", "") == ""
+        echom a:url
+        return
+    endif
+    let l:finalCmd = g:gh_open_command . a:url
+    if g:gh_trace
+        echom "vim-gh-line executing: " . l:finalCmd
+    endif
+    call system(l:finalCmd)
+endfun
+
 func! s:gh_line(action, force_interactive) range
     " Get Line Number/s
     let lineNum = line('.')
@@ -134,12 +146,7 @@ func! s:gh_line(action, force_interactive) range
             \ 'one of the supported git hosting environments: ' .
             \ 'GitHub, GitLab, BitBucket, Cgit.'
     endif
-
-    let l:finalCmd = g:gh_open_command . url
-    if g:gh_trace
-        echom "vim-gh-line executing: " . l:finalCmd
-    endif
-    call system(l:finalCmd)
+    call s:gh_exec_cmd(url)
 endfun
 
 func! s:gh_repo() range
@@ -180,12 +187,7 @@ func! s:gh_repo() range
             \ 'one of the supported git hosting environments: ' .
             \ 'GitHub, GitLab, BitBucket, Cgit.'
     endif
-
-    let l:finalCmd = g:gh_open_command . url . url_path
-    if g:gh_trace
-        echom "vim-gh-line executing: " . l:finalCmd
-    endif
-    call system(l:finalCmd)
+    call s:gh_exec_cmd(url . url_path)
 endfun
 
 func! s:find_git_remote(remote_list)
