@@ -145,6 +145,19 @@ func! s:testGitLabUrl(sid)
         \ 'GitLabUrl unexpected result with ssh protocol')
 endfunction
 
+func! s:testSrHtUrl(sid)
+    call s:persistedPrint('Calling testSrHtUrl')
+
+    let l:act = s:callWithSID(a:sid, 'SrHtUrl',
+        \ 'https://git.sr.ht/~sircmpwn/meta.sr.ht')
+    call assert_equal('https://git.sr.ht/~sircmpwn/meta.sr.ht', l:act,
+        \ 'SrHtUrl unexpected result with https protocol')
+
+    let l:act = s:callWithSID(a:sid, 'SrHtUrl',
+        \ 'git@git.sr.ht:~sircmpwn/meta.sr.ht')
+    call assert_equal('https://git.sr.ht/~sircmpwn/meta.sr.ht', l:act,
+        \ 'SrHtUrl unexpected result with ssh protocol')
+endfunction
 
 func! s:testGhCgitUrlPatternSubUsage(sid)
     " testGhCgitUrlPatternSubUsage verifies code that uses g:gh_cgit_url_pattern_sub
@@ -270,6 +283,7 @@ func! s:runAllTests()
     call s:testGithubUrl(l:scriptID)
     call s:testBitBucketUrl(l:scriptID)
     call s:testGitLabUrl(l:scriptID)
+    call s:testSrHtUrl(l:scriptID)
 
     call s:testGhCgitUrlPatternSubUsage(l:scriptID)
     call s:testGhCgitUrlPatternSubUsageErrors(l:scriptID)

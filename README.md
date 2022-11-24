@@ -2,7 +2,7 @@
 
  [![Build Status](https://travis-ci.org/ruanyl/vim-gh-line.svg?branch=master)](https://travis-ci.org/ruanyl/vim-gh-line)
 
-A Vim plugin that opens a link to the current line on GitHub (and also supports Bitbucket, self-deployed GitHub, Googlesource and GitLab).
+A Vim plugin that opens a link to the current line on GitHub (and also supports Bitbucket, self-deployed GitHub, Googlesource, GitLab, and SourceHut).
 
 ![gh-line](https://cloud.githubusercontent.com/assets/486382/10865375/142cd426-8012-11e5-92f8-44357b7acf9c.gif)
 
@@ -90,6 +90,13 @@ let g:gh_gitlab_domain = "<your gitlab domain>"
 ##### Use self deployed gitlab only with http:
 ```
 let g:gh_gitlab_only_http = 1
+```
+
+#### Use self-deployed SourceHut:
+Use a self deployed SourceHut (the value is a matching regex, i.e. you can use
+multiple domains separated with `|`):
+```
+let g:gh_srht_domain = "<your sourcehut domain>"
 ```
 
 #### Use a git remote with Cgit front end:

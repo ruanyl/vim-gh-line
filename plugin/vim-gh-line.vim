@@ -134,6 +134,13 @@ func! s:gh_line(action, force_interactive) range
     elseif s:GitLab(remote_url)
       let lineRange = s:GitLabLineRange(a:firstline, a:lastline, lineNum)
       let url = s:GitLabUrl(remote_url) . action . commit . relative . '#' . lineRange
+    elseif s:SrHt(remote_url)
+      let lineRange = s:SrHtLineRange(a:firstline, a:lastline, lineNum)
+      if a:action == "blame"
+          let url = s:SrHtUrl(remote_url) . action . commit . relative . '#' . lineRange
+      else
+          let url = s:SrHtUrl(remote_url) . action . commit . '/item/' . relative . '#' . lineRange
+      endif
     elseif s:Cgit(remote_url)
       let lineRange = s:CgitLineRange(a:firstline, a:lastline, lineNum)
       let l:commitStr = ''
@@ -144,7 +151,7 @@ func! s:gh_line(action, force_interactive) range
     else
         throw 'The remote: ' . remote_url . ' has not been recognized as belonging to ' .
             \ 'one of the supported git hosting environments: ' .
-            \ 'GitHub, GitLab, BitBucket, Cgit.'
+            \ 'GitHub, GitLab, BitBucket, SourceHut, Cgit.'
     endif
     call s:gh_exec_cmd(url)
 endfun
@@ -176,6 +183,8 @@ func! s:gh_repo() range
       endif
     elseif s:GitLab(remote_url)
       let url = s:GitLabUrl(remote_url)
+    elseif s:SrHt(remote_url)
+      let url = s:SrHtUrl(remote_url)
     elseif s:Cgit(remote_url)
       let url = s:CgitUrl(remote_url)
 
@@ -217,6 +226,8 @@ func! s:Action(remote_url, action)
       return '/annotate/'
     elseif s:GitLab(a:remote_url)
       return '/blame/'
+    elseif s:SrHt(a:remote_url)
+      return '/blame/'
     elseif s:Cgit(a:remote_url)
       " TODO: Most Cgit frontends do not support blame functionality
       return '/blame'
@@ -228,6 +239,8 @@ func! s:Action(remote_url, action)
       return '/src/'
     elseif s:GitLab(a:remote_url)
       return '/blob/'
+    elseif s:SrHt(a:remote_url)
+      return '/tree/'
     elseif s:Cgit(a:remote_url)
       return '/tree'
     endif
@@ -256,6 +269,10 @@ endfunc
 
 func! s:GitLab(remote_url)
   return exists('g:gh_gitlab_domain') && match(a:remote_url, g:gh_gitlab_domain) >= 0 || match(a:remote_url, 'gitlab') >= 0
+endfunc
+
+func! s:SrHt(remote_url)
+  return exists('g:gh_srht_domain') && match(a:remote_url, g:gh_srht_domain) >= 0 || match(a:remote_url, 'git.sr.ht') >= 0
 endfunc
 
 func! s:Cgit(remote_url)
@@ -292,6 +309,14 @@ func! s:BitbucketLineRange(firstLine, lastLine, lineNum)
 endfunc
 
 func! s:GitLabLineRange(firstLine, lastLine, lineNum)
+  if a:firstLine == a:lastLine
+    return 'L' . a:lineNum
+  else
+    return 'L' . a:firstLine . '-' . a:lastLine
+  endif
+endfunc
+
+func! s:SrHtLineRange(firstLine, lastLine, lineNum)
   if a:firstLine == a:lastLine
     return 'L' . a:lineNum
   else
@@ -371,6 +396,14 @@ func! s:GitLabUrl(remote_url)
   if g:gh_gitlab_only_http
     let l:rv = substitute(l:rv, 'https://', 'http://', '')
   endif
+
+  return l:rv
+endfunc
+
+func! s:SrHtUrl(remote_url)
+  let l:rv = s:TransformSSHToHTTPS(a:remote_url)
+  let l:rv = s:StripNL(l:rv)
+  let l:rv = s:StripSuffix(l:rv, '.git')
 
   return l:rv
 endfunc
