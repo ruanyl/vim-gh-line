@@ -78,7 +78,7 @@ func! s:gh_exec_cmd(url)
     call system(l:finalCmd)
 endfun
 
-func! s:gh_line(action, force_interactive) range
+func! GHLineGetURL(action, force_interactive) range
     " Get Line Number/s
     let lineNum = line('.')
     let fileName = resolve(expand('%:t'))
@@ -153,6 +153,11 @@ func! s:gh_line(action, force_interactive) range
             \ 'one of the supported git hosting environments: ' .
             \ 'GitHub, GitLab, BitBucket, SourceHut, Cgit.'
     endif
+    return url
+endfun
+
+func! s:gh_line(action, force_interactive) range
+    let url = GHLineGetURL(a:action, a:force_interactive)
     call s:gh_exec_cmd(url)
 endfun
 

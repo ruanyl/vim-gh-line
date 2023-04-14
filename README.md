@@ -143,6 +143,14 @@ let g:gh_cgit_url_pattern_sub = [
  \ ]
 ```
 
+### Use it in your vimscript
+
+You can call the `GHLineGetURL` function in your own vimscript to customize it further. For example:
+```
+let url = GHLineGetURL('blob', 0)
+" do something with url
+```
+
 ## Debugging
 
 For getting verbose prints from vim-gh-line plugin set.
