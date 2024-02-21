@@ -34,6 +34,10 @@ if !exists('g:gh_open_command')
     endif
 endif
 
+if !exists('g:gh_set_register')
+    let g:gh_set_register = '+'
+endif
+
 if !exists('g:gh_repo_map')
     let g:gh_repo_map = '<leader>go'
 endif
@@ -66,16 +70,20 @@ if !exists('g:gh_always_interactive')
     let g:gh_always_interactive = 0
 endif
 
-func! s:gh_exec_cmd(url)
+func! s:gh_open_url(url)
+    if get(g:, "gh_set_register", "") != ""
+        call setreg(g:gh_set_register, a:url)
+    endif
     if get(g:, "gh_open_command", "") == ""
         echom a:url
         return
+    else
+      let l:finalCmd = g:gh_open_command . a:url
+      if g:gh_trace
+          echom "vim-gh-line executing: " . l:finalCmd
+      endif
+      call system(l:finalCmd)
     endif
-    let l:finalCmd = g:gh_open_command . a:url
-    if g:gh_trace
-        echom "vim-gh-line executing: " . l:finalCmd
-    endif
-    call system(l:finalCmd)
 endfun
 
 func! s:gh_line(action, force_interactive) range
@@ -153,7 +161,7 @@ func! s:gh_line(action, force_interactive) range
             \ 'one of the supported git hosting environments: ' .
             \ 'GitHub, GitLab, BitBucket, SourceHut, Cgit.'
     endif
-    call s:gh_exec_cmd(url)
+    call s:gh_open_url(url)
 endfun
 
 func! s:gh_repo() range
@@ -196,7 +204,7 @@ func! s:gh_repo() range
             \ 'one of the supported git hosting environments: ' .
             \ 'GitHub, GitLab, BitBucket, Cgit.'
     endif
-    call s:gh_exec_cmd(url . url_path)
+    call s:gh_open_url(url . url_path)
 endfun
 
 func! s:find_git_remote(remote_list)
