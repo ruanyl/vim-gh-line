@@ -247,11 +247,31 @@ func! s:Action(remote_url, action)
   endif
 endfunc
 
-func! s:Commit(cdDir)
-  if exists('g:gh_use_canonical') && g:gh_use_canonical > 0
-    return system(a:cdDir . 'git rev-parse HEAD')
+func! s:BranchName(cdDir, ref)
+  return trim(system(a:cdDir . 'git rev-parse --abbrev-ref ' . a:ref))
+endfunc
+
+func! s:CommitRef(cdDir)
+  let l:upstreamBranch = system(a:cdDir . 'git rev-parse --abbrev-ref --symbolic-full-name @{u}')
+  if v:shell_error == 0
+    return l:upstreamBranch
   else
-    return system(a:cdDir . 'git rev-parse --abbrev-ref HEAD')
+    let l:currentBranch = s:BranchName(a:cdDir, 'HEAD')
+    let l:branch = input('Please provide a remote branch (defaults to ' . l:currentBranch . '): ')
+    if len(l:branch) == 0
+      return l:currentBranch
+    endif
+
+    return l:branch
+  endif
+endfunc
+
+func! s:Commit(cdDir)
+  let l:ref = s:CommitRef(a:cdDir)
+  if exists('g:gh_use_canonical') && g:gh_use_canonical > 0
+    return system(a:cdDir . 'git rev-parse ' . l:ref)
+  else
+    return s:BranchName(l:ref)
   endif
 endfunc
 
