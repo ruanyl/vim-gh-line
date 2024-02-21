@@ -199,13 +199,23 @@ func! s:gh_repo() range
     call s:gh_exec_cmd(url . url_path)
 endfun
 
+func! s:complete_remotes(A, L, P)
+    return join(s:remote_list, "\n")
+endfunc
+
 func! s:find_git_remote(remote_list)
   let l:remote = ""
 
   if len(a:remote_list) > 1
+    let s:remote_list = a:remote_list
     call inputsave()
-    let l:remote = input('Please select one remote(' . join(a:remote_list, ',') . '): ')
+    let l:remote = input(
+                \ 'Please select one remote (' . join(a:remote_list, ',') . '): ',
+                \ '',
+                \ 'custom,' . expand('<SID>') . 'complete_remotes'
+                \ )
     call inputrestore()
+    unlet s:remote_list
 
     if index(a:remote_list, l:remote) < 0
       echom " <- seems it is not a valid remote name"
